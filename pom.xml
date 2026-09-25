@@ -4,132 +4,92 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!--
+        Two artifacts, released together at one version:
+
+          journey-model       the journey document and its statuses — what
+                              journey-service stores and serves, and what the
+                              engine executes. Plain data, no Spring.
+          journey-engine-sdk  the engine that runs it.
+
+        journey-service needs the first and must not pull in the second (GraalVM,
+        FreeMarker, the AI SDK), which is why they are separate jars.
+    -->
     <groupId>com.itways.assistant</groupId>
-    <artifactId>journey-engine-sdk</artifactId>
-    <version>1.0.13</version>
+    <artifactId>journey-engine-parent</artifactId>
+    <version>1.0.14</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>journey-model</module>
+        <module>journey-engine-sdk</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.2.0</spring-boot.version>
-        <graalvm.js.version>24.1.2</graalvm.js.version>
+        <lombok.version>1.18.30</lombok.version>
+        <jackson.version>2.15.3</jackson.version>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-freemarker</artifactId>
-			 <version>${spring-boot.version}</version>
-		</dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-
-		<dependency>
-			<groupId>com.itways.assistant</groupId>
-			<artifactId>ai-engine-sdk</artifactId>
-			<version>1.0.3</version>
-		</dependency>
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js-scriptengine</artifactId>
-            <version>${graalvm.js.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>js-community</artifactId>
-            <version>${graalvm.js.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <version>${spring-boot.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>21</source>
+                        <target>21</target>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals><goal>jar</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <!--
+                    Without this, Maven falls back to the super-POM's surefire
+                    2.12.4, which predates JUnit 5: the tests compile, "Tests run: 0"
+                    is reported, and the build goes green having executed nothing.
+                    The Spring Boot services inherit a modern surefire from their
+                    parent; these libraries have no Spring parent.
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals><goal>jar</goal></goals>
-                    </execution>
-                </executions>
             </plugin>
-            <!--
-                Without this, Maven falls back to the super-POM's surefire
-                2.12.4, which predates JUnit 5: the tests compile, "Tests run: 0"
-                is reported, and the build goes green having executed nothing.
-                The Spring Boot services inherit a modern surefire from their
-                parent; this library has no parent.
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.13</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
-
 </project>
