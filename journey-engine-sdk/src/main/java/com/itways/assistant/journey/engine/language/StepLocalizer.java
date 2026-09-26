@@ -230,6 +230,7 @@ public class StepLocalizer {
     private static JourneyStep copyOf(JourneyStep step) {
         return JourneyStep.builder()
                 .id(step.getId())
+                .stepKey(step.getStepKey())
                 .stepOrder(step.getStepOrder())
                 .stepName(step.getStepName())
                 .actionType(step.getActionType())

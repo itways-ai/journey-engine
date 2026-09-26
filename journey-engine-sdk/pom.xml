@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.14</version>
+        <version>1.0.16</version>
     </parent>
 
     <artifactId>journey-engine-sdk</artifactId>
@@ -65,6 +65,21 @@
             <artifactId>js-community</artifactId>
             <version>${graalvm.js.version}</version>
             <type>pom</type>
+        </dependency>
+
+        <!-- Unit tests for the pure pieces only (graph order, key resolution,
+             egress rules, input hygiene): no Spring context, no network. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.24.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

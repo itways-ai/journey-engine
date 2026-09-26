@@ -40,20 +40,33 @@ public class ApiCallStepHandler implements StepHandler {
 	private final VariableContext variableContext;
 	private final StepOutputSchemaHelper schemaHelper;
 	private final RestTemplate restTemplate;
+	private final com.itways.assistant.journey.engine.util.EgressGuard egressGuard;
 
 	public ApiCallStepHandler(EngineUtils engineUtils, VariableContext variableContext,
-			StepOutputSchemaHelper schemaHelper,
+			StepOutputSchemaHelper schemaHelper, com.itways.assistant.journey.engine.util.EgressGuard egressGuard,
 			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.connect-timeout-ms:5000}") int connectTimeoutMs,
 			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.read-timeout-ms:30000}") int readTimeoutMs) {
 		this.engineUtils = engineUtils;
 		this.variableContext = variableContext;
 		this.schemaHelper = schemaHelper;
+		this.egressGuard = egressGuard;
 		// Timeouts are non-negotiable: this runs on the request thread, so a
 		// host that never answers used to hang the whole turn indefinitely.
 		// Deliberately a local instance, not an injected bean — an injected
 		// RestTemplate risks silently picking up ai-engine-sdk's
 		// trust-all-certificates template through auto-configuration.
-		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+		// Redirects are never followed: EgressGuard vets the URL the author
+		// wrote, and a public host answering 302 to http://169.254.169.254/
+		// would otherwise be followed straight past it. A 3xx comes back to the
+		// journey as the response it is.
+		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory() {
+			@Override
+			protected void prepareConnection(java.net.HttpURLConnection connection, String httpMethod)
+					throws java.io.IOException {
+				super.prepareConnection(connection, httpMethod);
+				connection.setInstanceFollowRedirects(false);
+			}
+		};
 		factory.setConnectTimeout(connectTimeoutMs);
 		factory.setReadTimeout(readTimeoutMs);
 		this.restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(factory));
@@ -95,6 +108,14 @@ public class ApiCallStepHandler implements StepHandler {
 						.userMessage(messages.get(context.resolvedLanguage(), "step.apiCall.userRequired"))
 						.metadata(Map.of(META_USER_REQUIRED, true))
 						.build();
+			}
+
+			// The URL is final only now — placeholders may have filled in the host
+			// from what the user typed — so this is where it is vetted.
+			String refusal = egressGuard.refusal(url);
+			if (refusal != null) {
+				log.warn("API_CALL step '{}' refused: {}", step.getStepName(), refusal);
+				return StepResult.error("API_CALL refused: " + refusal);
 			}
 
 			HttpHeaders headers = new HttpHeaders();

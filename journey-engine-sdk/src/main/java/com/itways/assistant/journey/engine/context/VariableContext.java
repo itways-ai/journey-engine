@@ -26,7 +26,12 @@ public class VariableContext {
             ConversationParams.PARAM_CONVERSATION_ID,
             // Lifted into internals by ChannelCapabilities; a journey must not be
             // able to read what its channel cannot do.
-            ChannelCapabilities.PARAM_CAPABILITIES);
+            ChannelCapabilities.PARAM_CAPABILITIES,
+            // The end user's bearer token. Copied into entities it became a
+            // variable, and variables are persisted with the parked run and the
+            // run history and shown to CODE_SCRIPT and DATA_MAP — every path
+            // EndUserAuth exists to keep it off.
+            EndUserAuth.PARAM_USER_TOKEN);
 
     public void ensureStructure(ExecutionContext context) {
         Map<String, Object> vars = context.getVariables();

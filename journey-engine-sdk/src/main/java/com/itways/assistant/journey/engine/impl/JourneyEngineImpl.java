@@ -98,17 +98,19 @@ public class JourneyEngineImpl implements JourneyEngine {
                 .startedAt(new Date())
                 .build();
 
+        // The end user's bearer token arrives as a reserved start-param. Lift it into
+        // engine internals before any step runs, so it never reaches run history,
+        // the variable picker, CODE_SCRIPT or DATA_MAP's prompt. Before the inputs
+        // are merged, not after: mergeInputs copies every param into
+        // inputs.entities, and lifting afterwards left the raw token there.
+        EndUserAuth.lift(context, params);
+
         if (isStructuredVariableMap(params)) {
             context.setVariables(shallowCopyVariables(params));
             variableContext.ensureStructure(context);
         } else {
             variableContext.mergeInputs(context, params);
         }
-
-        // The end user's bearer token arrives as a reserved start-param. Lift it into
-        // engine internals before any step runs, so it never reaches run history,
-        // the variable picker, CODE_SCRIPT or DATA_MAP's prompt.
-        EndUserAuth.lift(context, params);
 
         // Likewise for the rehearsal flag: lifted before any step runs, so no
         // journey can read {{simulate}} and behave differently under test.
@@ -211,11 +213,12 @@ public class JourneyEngineImpl implements JourneyEngine {
     public Map<String, Object> resume(JourneyDefinition journey, ExecutionContext context, Map<String, Object> inputParams,
             StepObserver observer) {
         Map<String, Object> pending = inputParams != null ? new HashMap<>(inputParams) : new HashMap<>();
-        variableContext.mergeInputs(context, pending);
         // Each turn carries a freshly read token: hosts rotate them (Vikunja's access
         // JWT lives ~10 minutes), so a resumed run must adopt the new one rather than
-        // keep the value captured when the journey started.
+        // keep the value captured when the journey started. Lifted before the merge
+        // for the same reason as in start(): mergeInputs copies params into entities.
         EndUserAuth.lift(context, pending);
+        variableContext.mergeInputs(context, pending);
         // A rehearsal stays a rehearsal across every turn: the flag is already
         // on the parked context, and this only catches a resume that re-sends it.
         com.itways.assistant.journey.engine.context.Simulation.lift(context, pending);
@@ -322,13 +325,18 @@ public class JourneyEngineImpl implements JourneyEngine {
         // Re-read on every turn, not cached on the context, because a resumed run
         // may have switched language since the turn that parked it.
         Map<Long, StepText> translations = loadTranslations(journey, context);
+        // Authors refer to steps by stable key; everything below runs by order.
+        // Within this version the mapping is fixed, so each step's key
+        // references are resolved just before it runs.
+        com.itways.assistant.journey.engine.util.StepKeyResolver keys =
+                com.itways.assistant.journey.engine.util.StepKeyResolver.of(steps);
 
         while (i < sortedSteps.size() && context.getStatus() == ExecutionStatus.RUNNING) {
             JourneyStep authored = sortedSteps.get(i);
             // Everything below this line works on the localized copy, so no handler
             // needs to know translations exist.
-            JourneyStep step = stepLocalizer.localize(authored, translations, context.getAccountId(),
-                    context.resolvedLanguage());
+            JourneyStep step = keys.resolve(stepLocalizer.localize(authored, translations, context.getAccountId(),
+                    context.resolvedLanguage()));
             int stepOrder = step.getStepOrder();
             int startIndex = context.getCurrentStepIndex();
 

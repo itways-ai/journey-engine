@@ -29,6 +29,10 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Values reach the template through {@code apiConfig.bindings}: each template variable
  * is bound to a journey expression, resolved here, and only those named values are sent.
  * The journey's variable namespaces are never handed to FreeMarker wholesale.
+ *
+ * <p>A published step carries {@code apiConfig.templateVersion}, the template version it
+ * was published with, so editing a template does not change live journeys until they are
+ * published again.
  */
 @Component
 @RequiredArgsConstructor
@@ -74,7 +78,7 @@ public class TemplateRenderHandler implements StepHandler {
 
         TemplateRenderResult result;
         try {
-            result = templateRenderPort.render(context.getAccountId(), templateId, model);
+            result = templateRenderPort.render(context.getAccountId(), templateId, config.getTemplateVersion(), model);
         } catch (Exception e) {
             log.error("❌ TEMPLATE_RENDER: template service unreachable for templateId={}", templateId, e);
             return StepResult.error("Template Rendering Failed: " + e.getMessage());

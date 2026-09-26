@@ -43,6 +43,12 @@ public class EngineUtils {
         if (clean.startsWith("{{") && clean.endsWith("}}")) {
             clean = clean.substring(2, clean.length() - 2).trim();
         }
+        // SpEL cannot parse a numeric property segment, so `steps.3.output ==
+        // 'OK'` failed to parse, fell to the path-only fallback below, and every
+        // comparison on a step's output silently evaluated false — the branch an
+        // author wrote a condition for never ran. The steps bucket is a map keyed
+        // by order, and the same lookup written as a map index parses.
+        String spel = NUMERIC_STEP_SEGMENT.matcher(clean).replaceAll("steps['$1']");
         try {
             // SimpleEvaluationContext, not Standard: condition expressions are
             // author-supplied text, and the Standard context exposes T(),
@@ -55,7 +61,7 @@ public class EngineUtils {
                     .withInstanceMethods()
                     .withRootObject(context)
                     .build();
-            return parser.parseExpression(clean).getValue(evalContext);
+            return parser.parseExpression(spel).getValue(evalContext);
         } catch (Exception e) {
             // SpEL cannot parse numeric path segments (`steps.1.output`), so fall
             // back to the variable resolver when the expression is just a path.
@@ -69,6 +75,9 @@ public class EngineUtils {
             return null;
         }
     }
+
+    /** {@code steps.<order>} as a path segment — rewritten to a map index before parsing. */
+    private static final Pattern NUMERIC_STEP_SEGMENT = Pattern.compile("(?<![\\w.])steps\\.(\\d+)(?![\\w])");
 
     /** SpEL keywords and literals that are never variable references. */
     private static final Set<String> EXPRESSION_KEYWORDS = Set.of(

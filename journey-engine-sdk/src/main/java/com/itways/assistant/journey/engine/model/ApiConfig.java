@@ -53,6 +53,15 @@ public class ApiConfig {
     @Builder.Default
     private Map<String, String> bindings = new HashMap<>();
 
+    /**
+     * TEMPLATE_RENDER: the template version this step renders. Written by journey-service
+     * into the published snapshot when the journey is published, so a later edit of the
+     * template reaches this journey only when it is published again. Null in drafts and in
+     * versions published before pinning existed: those render the template's current
+     * version.
+     */
+    private Integer templateVersion;
+
     // Elite: Knowledge Retrieval
     private String query;
     private String indexName;

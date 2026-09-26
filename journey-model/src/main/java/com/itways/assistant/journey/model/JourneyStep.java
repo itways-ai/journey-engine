@@ -25,6 +25,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class JourneyStep {
     private Long id;
+
+    /**
+     * The step's stable name for references: {@code {{steps.<stepKey>.output}}},
+     * a JUMP target, a {@code steps.<stepKey>.} path in a condition.
+     *
+     * <p>
+     * Unlike {@link #stepOrder}, which is the step's position and changes
+     * whenever a step is inserted, removed or moved above it, a key is assigned
+     * once — derived from the step's name when it is first saved — and kept
+     * for good. References written with keys therefore survive any reordering
+     * without being rewritten. Lower case letters, digits and underscores,
+     * starting with a letter, so a key can never be mistaken for an order.
+     *
+     * <p>
+     * Null in versions published before keys existed; their references are by
+     * order, which the engine still resolves.
+     */
+    private String stepKey;
+
     private int stepOrder;
     private String stepName;
     private String actionType;

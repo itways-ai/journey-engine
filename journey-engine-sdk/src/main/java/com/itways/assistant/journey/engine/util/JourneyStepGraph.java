@@ -33,7 +33,22 @@ public final class JourneyStepGraph {
     }
 
     /**
-     * Topological sort of steps via Kahn's BFS algorithm.
+     * Topological sort of steps via Kahn's algorithm, lowest step order first
+     * among the steps that are ready.
+     *
+     * <p>
+     * The ready set is a min-heap on step order, not a FIFO queue, and that is
+     * load-bearing: the engine resumes and advances on a high-water mark
+     * ({@code stepOrder <= currentStepIndex} is skipped), so the execution order
+     * must never run a higher order before a lower one that is already runnable.
+     * With a FIFO, every parentless step was queued up front, so a parentless
+     * closing step (5) ran ahead of the branches of a CONDITION (3, 4) — and once
+     * it had run, the high-water mark skipped both branches.
+     *
+     * <p>
+     * When every parent has a lower order than its child — which journey-service
+     * enforces at save and publish — this returns the steps in plain ascending
+     * order.
      *
      * @throws IllegalStateException if the step graph contains a cycle
      */
@@ -55,7 +70,7 @@ public final class JourneyStepGraph {
             }
         }
 
-        Queue<Integer> queue = new LinkedList<>();
+        Queue<Integer> queue = new PriorityQueue<>();
         for (JourneyStep s : steps) {
             if (inDegree.getOrDefault(s.getStepOrder(), 0) == 0) {
                 queue.add(s.getStepOrder());

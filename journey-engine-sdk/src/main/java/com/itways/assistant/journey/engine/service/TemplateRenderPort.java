@@ -21,9 +21,16 @@ public interface TemplateRenderPort {
      *
      * @param accountId  the account that owns the template
      * @param templateId the template to render
+     * @param version    the template version to render (a published step's pinned version),
+     *                   or null for the template's current version
      * @param model      values keyed by the names the template declares
      * @return the rendered output, or a result carrying the reason it failed
      * @throws RuntimeException if the template service could not be reached
      */
-    TemplateRenderResult render(String accountId, long templateId, Map<String, Object> model);
+    TemplateRenderResult render(String accountId, long templateId, Integer version, Map<String, Object> model);
+
+    /** Renders the template's current version. */
+    default TemplateRenderResult render(String accountId, long templateId, Map<String, Object> model) {
+        return render(accountId, templateId, null, model);
+    }
 }
