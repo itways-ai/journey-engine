@@ -32,6 +32,13 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
 
     private static final double SURE_MATCH_THRESHOLD = 0.85;
 
+    /**
+     * The step message when the search itself fails. Generic on purpose: the
+     * exception text can carry the knowledge service's internal address and
+     * response body, and step messages are stored in run history (JRN-18).
+     */
+    static final String SEARCH_UNAVAILABLE = "The knowledge base could not be searched right now";
+
     private final EngineUtils        engineUtils;
     private final VariableContext    variableContext;
     private final StepOutputSchemaHelper schemaHelper;
@@ -103,6 +110,12 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
                                     com.itways.assistant.ai.dto.AiMessage.user(prompt.toString())))
                             .config(aiConfigProvider.getConfig(context.getAccountId()))
                             .build());
+            if (response != null && response.isError()) {
+                // Never the provider's text as the answer: the stored one is used.
+                log.warn("Knowledge synthesis got no answer ({}), using the stored answer",
+                        response.getError().summary());
+                return null;
+            }
             String answer = response == null ? null : response.getContent();
             if (answer == null || answer.isBlank()) {
                 return null;
@@ -206,8 +219,12 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
             // Locale-scoped when the index has content in this language. Without it a
             // near-duplicate English chunk can outscore the correct Arabic one, since
             // the embedding space is shared across languages.
+            // In the run's assistant scope: the name means that assistant's own index,
+            // else the shared one. A shared journey therefore reads each assistant's
+            // own "faq" where it has one, and no run ever reads another assistant's.
             List<EngineSearchResult> results = knowledgeBasePort.search(
-                    accountId, indexName, queryVector, limit, context.resolvedLanguage().code());
+                    accountId, context.getAssistantId(), indexName, queryVector, limit,
+                    context.resolvedLanguage().code());
 
             String fallbackMsg = messages.get(context.resolvedLanguage(), "step.knowledge.noAnswer");
 
@@ -259,8 +276,10 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
             return respond(step, context, query, results, bestMatch, config);
 
         } catch (Exception e) {
-            log.error("❌ Knowledge Retrieval failed", e);
-            return StepResult.error("Knowledge Retrieval failed: " + e.getMessage());
+            // The detail (an internal URL, a response body) stays in the log: the
+            // step's message is kept in run history and shown to journey authors.
+            log.error("❌ Knowledge Retrieval failed for step {}: {}", step.getStepOrder(), e.getMessage(), e);
+            return StepResult.error(SEARCH_UNAVAILABLE);
         }
     }
 
