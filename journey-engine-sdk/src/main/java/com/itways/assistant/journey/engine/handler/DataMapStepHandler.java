@@ -88,17 +88,24 @@ public class DataMapStepHandler implements StepHandler {
 
 			AiResponse nlpResult = aiService.chat(chatRequest);
 
+			// A failed provider call is not an exception: the response carries the
+			// error instead of content. The step fails with the kind and status —
+			// what an operator needs to see the rate limit or the bad key — and
+			// never with the provider's own text, which stays in the log.
+			if (nlpResult == null || nlpResult.isError()) {
+				String reason = nlpResult == null ? "no response" : nlpResult.getError().summary();
+				log.warn("DATA_MAP step '{}' got no answer from the AI provider: {}", step.getStepName(), reason);
+				return StepResult.error("Data Mapping Failed: AI provider error " + reason);
+			}
+
 			// Strip markdown code blocks if present (AI often returns ```json ... ```)
 			String cleanedContent = stripMarkdownCodeBlocks(nlpResult.getContent());
 
-			// A failed provider call is not an exception here: the agents return
-			// the error text as ordinary content, so a 413 or a missing key
-			// arrives looking like an answer. Left alone it surfaces as a Jackson
-			// parse error in run history, which tells an operator nothing about
-			// the rate limit that actually caused it.
-			if (looksLikeProviderError(cleanedContent)) {
-				log.error("DATA_MAP step '{}' got a provider error instead of JSON: {}",
-						step.getStepName(), cleanedContent);
+			// An answer that is not JSON at all — blank, or prose — fails here with
+			// what the model said, rather than as a Jackson parse error in run
+			// history.
+			if (isNotJson(cleanedContent)) {
+				log.error("DATA_MAP step '{}' got an answer that is not JSON: {}", step.getStepName(), cleanedContent);
 				return StepResult.error("Data Mapping Failed: " + cleanedContent);
 			}
 
@@ -195,16 +202,12 @@ public class DataMapStepHandler implements StepHandler {
 	}
 
 	/**
-	 * Whether a response is a provider failure wearing an answer's clothes.
-	 *
-	 * <p>
-	 * {@code AiResponse} has no error channel — every agent's failure path
-	 * returns {@code content} set to the error text — so this is the only way a
-	 * caller can tell the difference. Recognising the shape rather than a
-	 * message list: what is certain is that a JSON-mapping answer begins with a
-	 * brace or a bracket, and prose never does.
+	 * Whether an answer cannot be a JSON mapping. Provider failures are
+	 * {@link AiResponse#isError()} and never get here; this catches a model
+	 * that answered blank or in prose. A JSON-mapping answer begins with a brace
+	 * or a bracket, and prose never does.
 	 */
-	private static boolean looksLikeProviderError(String content) {
+	private static boolean isNotJson(String content) {
 		if (content == null || content.isBlank()) {
 			return true;
 		}
@@ -263,6 +266,11 @@ public class DataMapStepHandler implements StepHandler {
 					.messages(List.of(AiMessage.system(DEFAULT_FILL_SYSTEM_PROMPT), AiMessage.user(repairPrompt)))
 					.files(files)
 					.config(aiRequestConfig).build());
+			if (retry == null || retry.isError()) {
+				log.warn("DATA_MAP step '{}' repair attempt got no answer: {}", step.getStepName(),
+						retry == null ? "no response" : retry.getError().summary());
+				return mapped;
+			}
 
 			Object reparsed = objectMapper.readValue(stripMarkdownCodeBlocks(retry.getContent()), Object.class);
 			if (reparsed instanceof Map) {
