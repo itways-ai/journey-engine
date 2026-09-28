@@ -1,6 +1,7 @@
 package com.itways.assistant.journey.engine.handler;
 
 import com.itways.assistant.journey.model.StepStatus;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,6 +17,7 @@ import com.itways.assistant.journey.engine.model.StepOutputSchema;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.model.TemplateRenderResult;
 import com.itways.assistant.journey.engine.service.StepHandler;
+import com.itways.assistant.journey.engine.service.TemplateRenderBusyException;
 import com.itways.assistant.journey.engine.service.TemplateRenderPort;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
@@ -33,6 +35,10 @@ import lombok.extern.slf4j.Slf4j;
  * <p>A published step carries {@code apiConfig.templateVersion}, the template version it
  * was published with, so editing a template does not change live journeys until they are
  * published again.
+ *
+ * <p>A render the template service turns away as busy (its render workers are all in
+ * use) is asked once more after {@link #BUSY_RETRY_PAUSE}. Nothing else is retried: a
+ * rejected render would fail the same way again, and a timeout has already waited long.
  */
 @Component
 @RequiredArgsConstructor
@@ -43,6 +49,9 @@ public class TemplateRenderHandler implements StepHandler {
     private final StepOutputSchemaHelper schemaHelper;
     private final EngineUtils engineUtils;
     private final TemplateRenderPort templateRenderPort;
+
+    /** How long a busy render waits before its one retry. */
+    static final Duration BUSY_RETRY_PAUSE = Duration.ofMillis(200);
 
     @Override
     public String getType() {
@@ -78,7 +87,13 @@ public class TemplateRenderHandler implements StepHandler {
 
         TemplateRenderResult result;
         try {
-            result = templateRenderPort.render(context.getAccountId(), templateId, config.getTemplateVersion(), model);
+            result = render(context.getAccountId(), templateId, config.getTemplateVersion(), model);
+        } catch (TemplateRenderBusyException e) {
+            log.warn("⚠️ TEMPLATE_RENDER: template service still busy after one retry for templateId={}", templateId);
+            return StepResult.error("Template Rendering Failed: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return StepResult.error("Template Rendering Failed: interrupted while waiting to retry");
         } catch (Exception e) {
             log.error("❌ TEMPLATE_RENDER: template service unreachable for templateId={}", templateId, e);
             return StepResult.error("Template Rendering Failed: " + e.getMessage());
@@ -109,6 +124,23 @@ public class TemplateRenderHandler implements StepHandler {
                 .data(Map.of("renderedContent", rendered))
                 .metadata(viewMetadata(result))
                 .build();
+    }
+
+    /**
+     * Renders through the port, asking once more when the template service answers
+     * busy. The retry is the only one: a service still busy after the pause is
+     * reported as a failed step rather than held up further.
+     */
+    private TemplateRenderResult render(String accountId, long templateId, Integer version,
+            Map<String, Object> model) throws InterruptedException {
+        try {
+            return templateRenderPort.render(accountId, templateId, version, model);
+        } catch (TemplateRenderBusyException busy) {
+            log.info("⏳ TEMPLATE_RENDER: template service busy for templateId={}, retrying in {} ms",
+                    templateId, BUSY_RETRY_PAUSE.toMillis());
+            Thread.sleep(BUSY_RETRY_PAUSE.toMillis());
+            return templateRenderPort.render(accountId, templateId, version, model);
+        }
     }
 
     /**

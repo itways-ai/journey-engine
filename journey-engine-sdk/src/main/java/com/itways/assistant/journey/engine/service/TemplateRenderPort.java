@@ -25,6 +25,8 @@ public interface TemplateRenderPort {
      *                   or null for the template's current version
      * @param model      values keyed by the names the template declares
      * @return the rendered output, or a result carrying the reason it failed
+     * @throws TemplateRenderBusyException if the template service is busy (HTTP 503) and
+     *         turned the render away; the caller may ask again after a short pause
      * @throws RuntimeException if the template service could not be reached
      */
     TemplateRenderResult render(String accountId, long templateId, Integer version, Map<String, Object> model);
