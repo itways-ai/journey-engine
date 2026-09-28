@@ -62,6 +62,13 @@ public class MailStepHandler implements StepHandler {
             return StepResult.error("Mail Send Failed: unreadable mail configuration - " + e.getMessage());
         }
 
+        // JRN-39: notification-service refuses settings without a host and parks
+        // the message, so the run would report a send that can never happen.
+        // Checked before the rehearsal branch, so a simulated run catches it too.
+        if (mailConfig.getSmtpHost() == null || mailConfig.getSmtpHost().isBlank()) {
+            return StepResult.error("Mail Send Failed: no SMTP host configured for this step");
+        }
+
         // Recipient, subject and body are author-written templates.
         String to = engineUtils.replacePlaceholders(mailConfig.getTo(), context.getVariables());
         String subject = engineUtils.replacePlaceholders(mailConfig.getSubject(), context.getVariables());
@@ -98,6 +105,8 @@ public class MailStepHandler implements StepHandler {
         }
 
         try {
+            // The password goes on as it is: sealed by journey-service, opened by
+            // notification-service. The engine never holds the key.
             mailDeliveryPort.get().send(mailConfig, to, subject, body);
         } catch (Exception e) {
             log.error("SEND_MAIL step '{}' delivery failed for recipient '{}'", step.getStepName(), to, e);

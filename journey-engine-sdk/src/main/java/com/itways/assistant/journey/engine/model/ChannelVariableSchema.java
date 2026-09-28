@@ -15,7 +15,9 @@ public final class ChannelVariableSchema {
                         .fields(List.of(
                                 OutputField.of("channel.id", "Channel ID", "string"),
                                 OutputField.of("channel.label", "Label", "string"),
-                                OutputField.of("channel.username", "Username", "string"),
+                                // No channel.username: it was the email of the staff member
+                                // who created the channel, and a journey step could send it
+                                // to a third party (CHN-16).
                                 OutputField.of("channel.type", "Type", "string"),
                                 OutputField.of("channel.status", "Status", "string")))
                         .build(),
