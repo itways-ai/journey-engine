@@ -39,10 +39,7 @@ public class EngineUtils {
         if (expression == null || expression.isEmpty()) {
             return null;
         }
-        String clean = expression.trim();
-        if (clean.startsWith("{{") && clean.endsWith("}}")) {
-            clean = clean.substring(2, clean.length() - 2).trim();
-        }
+        String clean = stripPlaceholderBraces(expression.trim());
         // SpEL cannot parse a numeric property segment, so `steps.3.output ==
         // 'OK'` failed to parse, fell to the path-only fallback below, and every
         // comparison on a step's output silently evaluated false — the branch an
@@ -75,6 +72,37 @@ public class EngineUtils {
             return null;
         }
     }
+
+    /**
+     * {@code {{path}}} inside an expression, read as the bare path (JRN-20).
+     *
+     * <p>
+     * A condition is an expression over variables, so its paths need no braces:
+     * {@code steps.3.output.count >= 4}. Authors write them anyway, by analogy
+     * with message text. SpEL reads {@code {{...}}} as a nested inline list, so
+     * {@code {{steps.3.output.count}} >= 4} compared a list with a number and
+     * always came out false. Journeys already published that way now evaluate
+     * as their author meant; preflight blocks new ones. Quoted text is left
+     * alone, and single braces (SpEL's own inline lists) never match.
+     */
+    static String stripPlaceholderBraces(String expression) {
+        if (!expression.contains("{{")) {
+            return expression;
+        }
+        StringBuilder out = new StringBuilder();
+        Matcher literal = STRING_LITERAL.matcher(expression);
+        int from = 0;
+        while (literal.find()) {
+            out.append(BRACED_PATH.matcher(expression.substring(from, literal.start())).replaceAll("$1"));
+            out.append(literal.group());
+            from = literal.end();
+        }
+        out.append(BRACED_PATH.matcher(expression.substring(from)).replaceAll("$1"));
+        return out.toString().trim();
+    }
+
+    /** {@code {{ path }}}: a placeholder wrapped around a single path. */
+    private static final Pattern BRACED_PATH = Pattern.compile("\\{\\{\\s*([^{}'\"]+?)\\s*}}");
 
     /** {@code steps.<order>} as a path segment — rewritten to a map index before parsing. */
     private static final Pattern NUMERIC_STEP_SEGMENT = Pattern.compile("(?<![\\w.])steps\\.(\\d+)(?![\\w])");

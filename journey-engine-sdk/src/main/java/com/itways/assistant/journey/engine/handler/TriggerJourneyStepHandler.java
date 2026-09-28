@@ -127,6 +127,10 @@ public class TriggerJourneyStepHandler implements StepHandler {
             passUserToken(context, pending);
             log.info("Resuming triggered journey '{}' executionId={}", intent, childContext.getExecutionId());
             childResult = journeyEngine.resume(childJourney, childContext, pending);
+            // This turn's answer was the reply to the child's question. Left in the
+            // parent's inputs, the parent's next USER_INPUT took it as its own
+            // answer and never asked.
+            variableContext.getInputs(context).remove("answer");
         } else {
             intent = engineUtils.replacePlaceholders(step.getActionTarget(), context.getVariables());
             if (intent == null || intent.isBlank()) {

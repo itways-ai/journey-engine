@@ -31,7 +31,11 @@ public class VariableContext {
             // variable, and variables are persisted with the parked run and the
             // run history and shown to CODE_SCRIPT and DATA_MAP — every path
             // EndUserAuth exists to keep it off.
-            EndUserAuth.PARAM_USER_TOKEN);
+            EndUserAuth.PARAM_USER_TOKEN,
+            // The rehearsal flag. Merged before Simulation.lift runs, so without
+            // this a journey could read {{inputs.entities.simulate}} and behave
+            // differently under test.
+            Simulation.PARAM_SIMULATE);
 
     public void ensureStructure(ExecutionContext context) {
         Map<String, Object> vars = context.getVariables();

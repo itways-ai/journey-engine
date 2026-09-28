@@ -24,7 +24,6 @@ class EngineUtilsConditionTest {
         assertThat(utils.evaluateCondition("steps.2.output == 'Alice'", vars)).isTrue();
         assertThat(utils.evaluateCondition("steps.2.output == 'Bob'", vars)).isFalse();
         assertThat(utils.evaluateCondition("steps.3.output.status == 'OK' and steps.3.output.count > 3", vars)).isTrue();
-        assertThat(utils.evaluateCondition("{{steps.3.output.count}} >= 4", vars)).isFalse(); // placeholders only as the whole expression
     }
 
     @Test
@@ -33,5 +32,26 @@ class EngineUtilsConditionTest {
         assertThat(utils.evaluateCondition("{{steps.3.output.valid}}", vars)).isTrue();
         assertThat(utils.evaluateCondition("inputs.age >= 18", vars)).isTrue();
         assertThat(utils.evaluateCondition("mysteps.3 == null", vars)).isFalse();
+    }
+
+    /**
+     * JRN-20: braces around a path inside a comparison used to make SpEL read a
+     * nested list, so the condition was always false. They are now read as the path.
+     */
+    @Test
+    void placeholderBracesInsideAComparisonAreReadAsThePath() {
+        assertThat(utils.evaluateCondition("{{steps.3.output.count}} >= 4", vars)).isTrue();
+        assertThat(utils.evaluateCondition("{{ steps.3.output.count }} > 4", vars)).isFalse();
+        assertThat(utils.evaluateCondition("{{steps.3.output.status}} == 'OK' and {{inputs.age}} >= 18", vars)).isTrue();
+    }
+
+    @Test
+    void bracesInQuotedTextAndSpelInlineListsAreLeftAlone() {
+        assertThat(EngineUtils.stripPlaceholderBraces("inputs.text == '{{name}}'"))
+                .isEqualTo("inputs.text == '{{name}}'");
+        assertThat(EngineUtils.stripPlaceholderBraces("{1,2,3}.contains(inputs.age)"))
+                .isEqualTo("{1,2,3}.contains(inputs.age)");
+        assertThat(EngineUtils.stripPlaceholderBraces("{{steps.3.output.count}} >= 4"))
+                .isEqualTo("steps.3.output.count >= 4");
     }
 }

@@ -591,7 +591,10 @@ public class JourneyEngineImpl implements JourneyEngine {
                                                          String message) {
         Date completedAt = null;
         Long durationMs = null;
-        if (status != RunStatus.RUNNING) {
+        // Only a run that has ended gets a completion time (JRN-07). A WAITING run
+        // is paused on a user, an approver or a timer and resumes later; stamping
+        // it made history show a "completed" date for a run that had not finished.
+        if (status.isFinal()) {
             completedAt = new Date();
             if (context.getStartedAt() != null) {
                 durationMs = completedAt.getTime() - context.getStartedAt().getTime();
@@ -678,9 +681,13 @@ public class JourneyEngineImpl implements JourneyEngine {
             return true;
         }
 
+        // "Has the parent run" is whether it left a result, not whether that
+        // result is non-null: a SWITCH on a missing value, an API_CALL answering
+        // 204 or a RESPONSE with no text ran and produced null, and reading that
+        // as "never ran" skipped every step under it, DEFAULT branch included.
         if (JourneyStepGraph.isRejoinStep(step)) {
             for (Integer parent : inbound) {
-                if (context.getStepResults().get(parent) != null) {
+                if (context.getStepResults().containsKey(parent)) {
                     return true;
                 }
             }
@@ -688,11 +695,10 @@ public class JourneyEngineImpl implements JourneyEngine {
         }
 
         Integer parentOrder = inbound.get(0);
-        Object parentResult = context.getStepResults().get(parentOrder);
-
-        if (parentResult == null) {
+        if (!context.getStepResults().containsKey(parentOrder)) {
             return false;
         }
+        Object parentResult = context.getStepResults().get(parentOrder);
 
         String requiredBranch = step.getBranchName();
 

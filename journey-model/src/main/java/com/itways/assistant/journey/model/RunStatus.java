@@ -9,5 +9,13 @@ public enum RunStatus {
     /** Paused on a step that needs the user, an approver or a timer. */
     WAITING,
     COMPLETED,
-    ERROR
+    ERROR;
+
+    /**
+     * Whether the run has ended and will not continue. Only a final run has a
+     * completion time: a WAITING run resumes later.
+     */
+    public boolean isFinal() {
+        return this == COMPLETED || this == ERROR;
+    }
 }

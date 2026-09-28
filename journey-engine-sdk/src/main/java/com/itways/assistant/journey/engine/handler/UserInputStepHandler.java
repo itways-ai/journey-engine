@@ -118,6 +118,26 @@ public class UserInputStepHandler implements StepHandler {
             }
         }
 
+        String awaitingKey = AWAITING_CONFIRM_PREFIX + step.getStepOrder();
+        if (answer instanceof String && Boolean.TRUE.equals(context.getInternal(awaitingKey))) {
+            // A yes or no to "please confirm" is a verdict on the answer already
+            // given, not a new answer: stored as one, "yes" replaced the value
+            // being confirmed. Anything else is a correction and falls through.
+            Boolean decision = decisionWords.interpret(answer);
+            if (decision != null) {
+                inputs.remove("answer");
+                context.removeInternal(awaitingKey);
+                if (decision) {
+                    Object confirmed = context.getStepResults().get(step.getStepOrder());
+                    return StepResult.success(confirmed, (step.getMessage() != null && !step.getMessage().isEmpty())
+                            ? engineUtils.replacePlaceholders(step.getMessage(), context.getVariables())
+                            : step.getMessage());
+                }
+                context.setStatus(ExecutionStatus.WAITING_FOR_INPUT);
+                return StepResult.waiting(prompt(step, context), prepareMetadata(step, uiConfig));
+            }
+        }
+
         if (answer != null) {
             // Validate before storing. Until this existed the engine took any
             // answer at all: a widget enforced the author's rules and every
@@ -135,7 +155,6 @@ public class UserInputStepHandler implements StepHandler {
             // The awaiting-confirmation marker is what makes the second pass
             // through this step count as the confirmation; without it a plain-text
             // reply (every channel user) re-triggered the prompt forever.
-            String awaitingKey = AWAITING_CONFIRM_PREFIX + step.getStepOrder();
             boolean awaitingConfirmation = Boolean.TRUE.equals(context.getInternal(awaitingKey));
 
             if ("INTERACTIVE".equalsIgnoreCase(uiConfig.getInputMode())
