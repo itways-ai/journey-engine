@@ -1,6 +1,7 @@
 package com.itways.assistant.journey.engine.handler;
 
 import com.itways.assistant.journey.model.StepStatus;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +13,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -27,6 +27,8 @@ import com.itways.assistant.journey.engine.model.StepDefinition;
 import com.itways.assistant.journey.engine.model.StepOutputSchema;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.StepHandler;
+import com.itways.assistant.journey.engine.util.EgressGuard;
+import com.itways.assistant.journey.engine.util.EgressHttpClients;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
 
@@ -40,10 +42,10 @@ public class ApiCallStepHandler implements StepHandler {
 	private final VariableContext variableContext;
 	private final StepOutputSchemaHelper schemaHelper;
 	private final RestTemplate restTemplate;
-	private final com.itways.assistant.journey.engine.util.EgressGuard egressGuard;
+	private final EgressGuard egressGuard;
 
 	public ApiCallStepHandler(EngineUtils engineUtils, VariableContext variableContext,
-			StepOutputSchemaHelper schemaHelper, com.itways.assistant.journey.engine.util.EgressGuard egressGuard,
+			StepOutputSchemaHelper schemaHelper, EgressGuard egressGuard,
 			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.connect-timeout-ms:5000}") int connectTimeoutMs,
 			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.read-timeout-ms:30000}") int readTimeoutMs) {
 		this.engineUtils = engineUtils;
@@ -55,21 +57,15 @@ public class ApiCallStepHandler implements StepHandler {
 		// Deliberately a local instance, not an injected bean — an injected
 		// RestTemplate risks silently picking up ai-engine-sdk's
 		// trust-all-certificates template through auto-configuration.
+		// The connection dials only the addresses EgressGuard vetted: the client
+		// takes its DNS from the guard, so a name cannot answer a public address
+		// to the check and a private one to the connect (DNS rebinding).
 		// Redirects are never followed: EgressGuard vets the URL the author
 		// wrote, and a public host answering 302 to http://169.254.169.254/
 		// would otherwise be followed straight past it. A 3xx comes back to the
 		// journey as the response it is.
-		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory() {
-			@Override
-			protected void prepareConnection(java.net.HttpURLConnection connection, String httpMethod)
-					throws java.io.IOException {
-				super.prepareConnection(connection, httpMethod);
-				connection.setInstanceFollowRedirects(false);
-			}
-		};
-		factory.setConnectTimeout(connectTimeoutMs);
-		factory.setReadTimeout(readTimeoutMs);
-		this.restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(factory));
+		this.restTemplate = new RestTemplate(new BufferingClientHttpRequestFactory(EgressHttpClients.requestFactory(
+				egressGuard, Duration.ofMillis(connectTimeoutMs), Duration.ofMillis(readTimeoutMs))));
 	}
 
 	@Override
@@ -148,6 +144,13 @@ public class ApiCallStepHandler implements StepHandler {
 			return StepResult.error("API Call Failed [" + e.getStatusCode() + "]: " +
 					(bodyMsg != null && !bodyMsg.isBlank() ? bodyMsg : e.getMessage()));
 		} catch (org.springframework.web.client.ResourceAccessException e) {
+			// The name resolved to a private address when the connection looked
+			// it up, after passing the check above: refused in the same words.
+			String refusal = EgressGuard.refusalIn(e);
+			if (refusal != null) {
+				log.warn("API_CALL step '{}' refused at connect: {}", step.getStepName(), refusal);
+				return StepResult.error("API_CALL refused: " + refusal);
+			}
 			// Connect/read timeout or unreachable host. Named separately so run
 			// history says "timed out" instead of a raw I/O stack message.
 			log.error("API_CALL step '{}' did not answer in time: {}", step.getStepName(), e.getMessage());
