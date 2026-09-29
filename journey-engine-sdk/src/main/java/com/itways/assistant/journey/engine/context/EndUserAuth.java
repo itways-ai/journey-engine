@@ -12,7 +12,7 @@ import com.itways.assistant.journey.engine.model.ExecutionContext;
  * reach {@code API_CALL} without ever becoming a journey variable. Variables
  * are serialised wholesale into run history, the journey variable picker, the
  * {@code CODE_SCRIPT} sandbox and {@code DATA_MAP}'s LLM prompt — see the
- * contract on {@link ExecutionContext#getInternal()}. A live bearer token must
+ * contract on the {@code internal} map of {@link ExecutionContext}. A live bearer token must
  * travel none of those paths.
  *
  * <p>
@@ -34,7 +34,7 @@ public final class EndUserAuth {
 	 */
 	public static final String PARAM_USER_TOKEN = "__nibras_user_token";
 
-	/** Key under which the token lives in {@link ExecutionContext#getInternal()}. */
+	/** Key under which the token lives in {@link ExecutionContext#getInternal(String)}. */
 	public static final String INTERNAL_USER_TOKEN = "auth.userToken";
 
 	/** Placeholder namespace journey authors write: {@code {{auth.userToken}}}. */

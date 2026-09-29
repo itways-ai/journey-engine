@@ -1,7 +1,5 @@
 package com.itways.assistant.journey.engine.util;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -14,6 +12,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.itways.common.net.PublicUrlPolicy;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -208,39 +208,18 @@ public class EgressGuard {
 		return false;
 	}
 
+	/**
+	 * The platform's one address rule, {@link PublicUrlPolicy#isPublic} in
+	 * common-core: anything that is not a public address is internal. That is
+	 * loopback, unspecified, link-local, private (10/8, 172.16/12, 192.168/16),
+	 * multicast, "this network" (0/8), carrier-grade NAT (100.64/10), IETF
+	 * protocol assignments (192.0.0/24), benchmarking (198.18/15), reserved and
+	 * broadcast (240/4), IPv6 unique local (fc00::/7), and an IPv4-mapped IPv6
+	 * address by the IPv4 address inside. The documentation ranges (192.0.2/24,
+	 * 198.51.100/24, 203.0.113/24, 2001:db8::/32) count as internal too: no real
+	 * API lives there.
+	 */
 	static boolean isInternal(InetAddress address) {
-		if (address.isLoopbackAddress() || address.isAnyLocalAddress() || address.isLinkLocalAddress()
-				|| address.isSiteLocalAddress() || address.isMulticastAddress()) {
-			return true;
-		}
-		byte[] b = address.getAddress();
-		if (address instanceof Inet4Address) {
-			int first = b[0] & 0xFF;
-			int second = b[1] & 0xFF;
-			return first == 0 // "this network"
-					|| (first == 100 && second >= 64 && second <= 127) // carrier-grade NAT, 100.64.0.0/10
-					|| (first == 192 && second == 0 && (b[2] & 0xFF) == 0) // IETF protocol assignments
-					|| (first == 198 && (second == 18 || second == 19)) // benchmarking
-					|| first >= 240; // reserved and broadcast
-		}
-		if (address instanceof Inet6Address) {
-			// Unique local fc00::/7 — the IPv6 counterpart of the private ranges.
-			if ((b[0] & 0xFE) == 0xFC) {
-				return true;
-			}
-			// IPv4-mapped (::ffff:a.b.c.d): judge the IPv4 address inside.
-			boolean mapped = true;
-			for (int i = 0; i < 10; i++) {
-				mapped &= b[i] == 0;
-			}
-			if (mapped && (b[10] & 0xFF) == 0xFF && (b[11] & 0xFF) == 0xFF) {
-				try {
-					return isInternal(InetAddress.getByAddress(Arrays.copyOfRange(b, 12, 16)));
-				} catch (UnknownHostException e) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return !PublicUrlPolicy.isPublic(address);
 	}
 }

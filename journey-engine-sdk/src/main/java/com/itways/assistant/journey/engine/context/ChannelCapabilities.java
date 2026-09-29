@@ -26,7 +26,7 @@ public final class ChannelCapabilities {
 	/** Reserved start-param: a map of capability name to boolean. */
 	public static final String PARAM_CAPABILITIES = "__nibras_channel_capabilities";
 
-	/** Key under which the map lives in {@link ExecutionContext#getInternal()}. */
+	/** Key under which the map lives in {@link ExecutionContext#getInternal(String)}. */
 	public static final String INTERNAL_CAPABILITIES = "channel.capabilities";
 
 	/** Can show a multi-field form and take it back in one reply. */

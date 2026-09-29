@@ -20,7 +20,9 @@ public class ApiConfig {
     @Builder.Default
     private Map<String, String> queryParams = new HashMap<>();
     private Object body;
+    @Builder.Default
     private boolean allowMissingInputs = false;
+    @Builder.Default
     private boolean allowResubmit = false;
     @Builder.Default
     private String inputMode = "FREE_TEXT"; // FREE_TEXT, STRUCTURED, INTERACTIVE

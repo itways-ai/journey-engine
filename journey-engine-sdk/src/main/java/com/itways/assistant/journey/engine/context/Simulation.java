@@ -23,7 +23,7 @@ import com.itways.assistant.journey.engine.model.ExecutionContext;
  * whether their journey works.
  *
  * <p>
- * The flag lives in {@link ExecutionContext#getInternal()} rather than among
+ * The flag lives in {@link ExecutionContext#getInternal(String)} rather than among
  * the variables, for the same reason the end-user token does: everything in the
  * variable map is serialised into run history, the variable picker, the script
  * sandbox and the {@code DATA_MAP} prompt. A journey author must not be able to
@@ -44,7 +44,7 @@ public final class Simulation {
      */
     public static final String PARAM_SIMULATE = "simulate";
 
-    /** Key under which the flag lives in {@link ExecutionContext#getInternal()}. */
+    /** Key under which the flag lives in {@link ExecutionContext#getInternal(String)}. */
     public static final String INTERNAL_SIMULATE = "_simulate";
 
     /**

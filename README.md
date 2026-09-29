@@ -11,7 +11,7 @@ ports.
 | Module | Artifact | What it is |
 |---|---|---|
 | `journey-model` | `com.itways.assistant:journey-model` | The journey document and its statuses (`JourneyDefinition`, `JourneyStep`, `RunStatus`, `StepStatus`, `RunStepLog`, `RunHistoryEvent`, …), the step graph (`JourneyStepGraph`: parents, order, cycle check) and, in `model.catalog`, the step catalogue the builder reads (`StepDefinition`, `StepOutputSchema`, `OutputField`, `ChannelVariableSchema`, `ChannelVariableGroup`). Plain data, no Spring. The service that stores journeys depends on this only. |
-| `journey-engine-sdk` | `com.itways.assistant:journey-engine-sdk` | The engine, the step handlers, the ports and the Spring configuration. Pulls in Spring Boot, FreeMarker, GraalVM JS and `ai-engine-sdk`. |
+| `journey-engine-sdk` | `com.itways.assistant:journey-engine-sdk` | The engine, the step handlers, the ports and the Spring configuration. Pulls in Spring Boot, FreeMarker, GraalVM JS, `ai-engine-sdk` and `common-core`. |
 
 Both are released together at the version in the parent `pom.xml`.
 
@@ -133,7 +133,11 @@ beans:
 
 Tenants write API_CALL URLs, and those URLs can be built from what the end user
 typed. `EgressGuard` therefore refuses any URL that is not http(s), or whose
-host resolves to a private, loopback, link-local or other internal address. It
+host resolves to a private, loopback, link-local or other internal address. What
+counts as internal is the platform's one address rule, `PublicUrlPolicy.isPublic`
+in `common-core` (the engine depends on `common-core` only, never on `common-web`
+or `common-messaging`); it also treats the documentation ranges (192.0.2/24,
+198.51.100/24, 203.0.113/24, 2001:db8::/32) as internal. It
 checks every address a name resolves to, not just the first. The connection
 then dials only the addresses that were checked, so DNS rebinding does not get
 through. Redirects are not followed: a 3xx comes back to the journey as the
@@ -160,8 +164,8 @@ Other settings: `nibras.journey.script.statement-limit` (500000),
 ## Build
 
 The parent is `com.itways:platform-parent` 2.0.0 (from `common-lib`). It sets
-Java 21, manages the versions (Spring Boot 3.2.2; `ai-engine-sdk` through
-`platform-bom`) and runs JaCoCo, surefire and the sources
+Java 21, manages the versions (Spring Boot 3.2.2; `ai-engine-sdk` and
+`common-core` through `platform-bom`) and runs JaCoCo, surefire and the sources
 jar. Only GraalVM JS (`graalvm.js.version`) carries its own version.
 
 Build with JDK 21 (a newer JDK breaks Lombok), after installing `common-lib`

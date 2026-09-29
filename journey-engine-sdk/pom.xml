@@ -49,6 +49,13 @@
             <groupId>com.itways.assistant</groupId>
             <artifactId>ai-engine-sdk</artifactId>
         </dependency>
+        <!-- EgressGuard's address rule: PublicUrlPolicy, the platform's one rule for
+             which addresses are public. Framework-free; the engine must not depend
+             on common-web or common-messaging. Version from platform-bom. -->
+        <dependency>
+            <groupId>com.itways</groupId>
+            <artifactId>common-core</artifactId>
+        </dependency>
         <!-- API_CALL steps dial only the addresses EgressGuard vetted, through
              the connection manager's DnsResolver (DNS rebinding). Declared because
              the engine uses it directly; version managed by Spring Boot. -->
