@@ -1,0 +1,15 @@
+# Runs the platform's shared Java workflow on every push and pull request:
+# `mvn verify`, then `mvn spotless:check`. A library publishes no image.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: itways-ai/platform-workspace/.github/workflows/java-build.yml@main
+    with:
+      repo: journey-engine
+      kind: library
+    secrets: inherit
