@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * Port interface for rendering a stored template.
- * Implemented by assistant-service, which calls template-service over HTTP.
+ * Implemented by conversation-service, which calls template-service over HTTP.
  * Kept here in the SDK so TemplateRenderHandler can depend on it without knowing
  * anything about Feign or the template service's URL.
  *

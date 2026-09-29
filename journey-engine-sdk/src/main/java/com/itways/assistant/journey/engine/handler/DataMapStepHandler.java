@@ -132,7 +132,7 @@ public class DataMapStepHandler implements StepHandler {
 	 * ratio is provider-specific; roughly four characters to a token is close
 	 * enough for a safety bound.
 	 */
-	@org.springframework.beans.factory.annotation.Value("${nibras.journey.data-map.context-budget-chars:8000}")
+	@org.springframework.beans.factory.annotation.Value("${journey.data-map.context-budget-chars:8000}")
 	private int contextBudgetChars = 8000;
 
 	/**

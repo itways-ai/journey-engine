@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * Hosts a deployment genuinely wants reachable — an on-premise API on the same
- * network — go in {@code nibras.journey.api-call.allowed-hosts} (env var
+ * network — go in {@code journey.api-call.allowed-hosts} (env var
  * {@value #ALLOW_LIST_SETTING}): exact names or IP literals, or
  * {@code .example.internal} for a domain and its subdomains. It is one
  * platform-wide operator setting per deployment, not a per-tenant one.
@@ -89,8 +89,8 @@ public class EgressGuard {
 
 	@Autowired
 	public EgressGuard(
-			@Value("${nibras.journey.api-call.block-private-networks:true}") boolean blockPrivateNetworks,
-			@Value("${nibras.journey.api-call.allowed-hosts:}") String allowedHosts) {
+			@Value("${journey.api-call.block-private-networks:true}") boolean blockPrivateNetworks,
+			@Value("${journey.api-call.allowed-hosts:}") String allowedHosts) {
 		this(blockPrivateNetworks, allowedHosts, InetAddress::getAllByName, EgressGuard::isInternal);
 	}
 
@@ -183,7 +183,7 @@ public class EgressGuard {
 						host, address.getHostAddress());
 				throw new RefusedHostException("host " + host + " is not allowed: it is a private or internal address. "
 						+ "An operator can allow it with the " + ALLOW_LIST_SETTING
-						+ " setting (nibras.journey.api-call.allowed-hosts)");
+						+ " setting (journey.api-call.allowed-hosts)");
 			}
 		}
 		return addresses;

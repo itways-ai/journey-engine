@@ -46,8 +46,8 @@ public class ApiCallStepHandler implements StepHandler {
 
 	public ApiCallStepHandler(EngineUtils engineUtils, VariableContext variableContext,
 			StepOutputSchemaHelper schemaHelper, EgressGuard egressGuard,
-			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.connect-timeout-ms:5000}") int connectTimeoutMs,
-			@org.springframework.beans.factory.annotation.Value("${nibras.journey.api-call.read-timeout-ms:30000}") int readTimeoutMs) {
+			@org.springframework.beans.factory.annotation.Value("${journey.api-call.connect-timeout-ms:5000}") int connectTimeoutMs,
+			@org.springframework.beans.factory.annotation.Value("${journey.api-call.read-timeout-ms:30000}") int readTimeoutMs) {
 		this.engineUtils = engineUtils;
 		this.variableContext = variableContext;
 		this.schemaHelper = schemaHelper;

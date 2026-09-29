@@ -61,7 +61,7 @@ public class UserInputStepHandler implements StepHandler {
      * be asked forever. Three tries is enough for a typo and short enough that a
      * genuinely impossible question surfaces as a failed run someone can look at.
      */
-    @org.springframework.beans.factory.annotation.Value("${nibras.journey.user-input.max-attempts:3}")
+    @org.springframework.beans.factory.annotation.Value("${journey.user-input.max-attempts:3}")
     private int maxAttempts = 3;
 
     @Override

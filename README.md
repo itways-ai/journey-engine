@@ -148,22 +148,30 @@ allow-list:
 
 | Property | Environment variable | Default |
 |---|---|---|
-| `nibras.journey.api-call.allowed-hosts` | `JOURNEY_API_ALLOWED_HOSTS` | empty. Takes exact host names or IP literals, comma-separated. `.corp.example` allows a domain and its subdomains. |
-| `nibras.journey.api-call.block-private-networks` | | `true` |
-| `nibras.journey.api-call.connect-timeout-ms` / `read-timeout-ms` | | `5000` / `30000` |
+| `journey.api-call.allowed-hosts` | `JOURNEY_API_ALLOWED_HOSTS` (mapped in the host's properties) | empty. Takes exact host names or IP literals, comma-separated. `.corp.example` allows a domain and its subdomains. |
+| `journey.api-call.block-private-networks` | | `true` |
+| `journey.api-call.connect-timeout-ms` / `read-timeout-ms` | | `5000` / `30000` |
 
 A refusal names the host as the URL wrote it, and never the address it resolved
 to.
 
-Other settings: `nibras.journey.script.statement-limit` (500000),
-`nibras.journey.script.timeout-seconds` (10),
-`nibras.journey.user-input.max-attempts` (3),
-`nibras.journey.data-map.context-budget-chars` (8000),
-`nibras.knowledge.synthesis.enabled`.
+Other settings: `journey.script.statement-limit` (500000),
+`journey.script.timeout-seconds` (10),
+`journey.user-input.max-attempts` (3),
+`journey.data-map.context-budget-chars` (8000),
+`journey.knowledge.synthesis.enabled` (true) and
+`journey.knowledge.synthesis.max-chunks` (3).
+
+All of them were under the legacy `nibras.` prefix (`nibras.journey.*`,
+`nibras.knowledge.synthesis.*`) up to 1.0.18; since 1.0.19 the old keys are not
+read, so a host that set one renames it (the host is conversation-service).
+The run parameters the engine lifts out of the variables
+(`__nibras_conversation_id`, `__nibras_channel_capabilities`,
+`__nibras_user_token`) keep their names: they are stored in run history.
 
 ## Build
 
-The parent is `com.itways:platform-parent` 2.0.0 (from `common-lib`). It sets
+The parent is `com.itways:platform-parent` 2.1.0 (from `common-lib`). It sets
 Java 21, manages the versions (Spring Boot 3.2.2; `ai-engine-sdk` and
 `common-core` through `platform-bom`) and runs JaCoCo, surefire and the sources
 jar. Only GraalVM JS (`graalvm.js.version`) carries its own version.

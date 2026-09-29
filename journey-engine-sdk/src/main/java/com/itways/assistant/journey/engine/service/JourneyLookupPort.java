@@ -4,7 +4,7 @@ import com.itways.assistant.journey.model.JourneyDefinition;
 
 /**
  * Port for resolving a journey by its trigger intent at runtime.
- * Implemented by the host (e.g. assistant-service) so the engine can run
+ * Implemented by the host (e.g. conversation-service) so the engine can run
  * TRIGGER_JOURNEY steps without depending on journey-service directly.
  */
 public interface JourneyLookupPort {

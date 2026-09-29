@@ -58,11 +58,11 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
      * Off restores the previous behaviour exactly: the single best-scoring
      * chunk, returned as stored.
      */
-    @org.springframework.beans.factory.annotation.Value("${nibras.knowledge.synthesis.enabled:true}")
+    @org.springframework.beans.factory.annotation.Value("${journey.knowledge.synthesis.enabled:true}")
     private boolean synthesisEnabled = true;
 
     /** How many chunks may be quoted to the model when composing. */
-    @org.springframework.beans.factory.annotation.Value("${nibras.knowledge.synthesis.max-chunks:3}")
+    @org.springframework.beans.factory.annotation.Value("${journey.knowledge.synthesis.max-chunks:3}")
     private int synthesisMaxChunks = 3;
 
     /**

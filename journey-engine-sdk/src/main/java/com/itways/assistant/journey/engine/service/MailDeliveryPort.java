@@ -4,7 +4,7 @@ import com.itways.assistant.journey.engine.model.MailConfig;
 
 /**
  * Sends email using per-step SMTP settings. Implemented by the host application
- * (e.g. assistant-service via RabbitMQ notification-service).
+ * (e.g. conversation-service via RabbitMQ notification-service).
  */
 public interface MailDeliveryPort {
 

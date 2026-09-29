@@ -80,7 +80,7 @@ public class ApiConfig {
      * <li>{@code COMPOSE} — when several entries match, combine them into one
      * answer. Right when a question is genuinely answered across two entries.
      * <li>{@code AUTO} (or null) — follow the platform default,
-     * {@code nibras.knowledge.synthesis.enabled}.
+     * {@code journey.knowledge.synthesis.enabled}.
      * </ul>
      *
      * <p>

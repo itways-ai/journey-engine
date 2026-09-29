@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>
  * journey-service builds it ({@code GET /api/journeys/versions/{id}/content})
- * and speech-service runs it; both compile against this class, so the document
+ * and conversation-service runs it; both compile against this class, so the document
  * cannot drift between the service that stores it and the one that executes it.
  *
  * <p>

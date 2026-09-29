@@ -50,10 +50,10 @@ public class CodeScriptStepHandler implements StepHandler {
      * Both exist because the engine runs scripts on the request thread — an
      * unbounded script used to hang the whole turn forever.
      */
-    @org.springframework.beans.factory.annotation.Value("${nibras.journey.script.statement-limit:500000}")
+    @org.springframework.beans.factory.annotation.Value("${journey.script.statement-limit:500000}")
     private long statementLimit = 500_000;
 
-    @org.springframework.beans.factory.annotation.Value("${nibras.journey.script.timeout-seconds:10}")
+    @org.springframework.beans.factory.annotation.Value("${journey.script.timeout-seconds:10}")
     private long timeoutSeconds = 10;
 
     /** One daemon watchdog for all scripts; a timer entry per execution, not a thread. */
