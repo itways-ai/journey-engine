@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.17</version>
+        <version>1.0.18</version>
     </parent>
 
     <artifactId>journey-engine-sdk</artifactId>
@@ -77,18 +77,18 @@
             <type>pom</type>
         </dependency>
 
-        <!-- Unit tests for the pure pieces only (graph order, key resolution,
-             egress rules, input hygiene): no Spring context, no network. -->
+        <!-- Plain JUnit 5 + AssertJ unit tests: no Spring context, no external
+             services (API_CALL tests use a loopback HTTP server). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

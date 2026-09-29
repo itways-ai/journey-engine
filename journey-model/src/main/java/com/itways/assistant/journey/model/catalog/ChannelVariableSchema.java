@@ -1,4 +1,4 @@
-package com.itways.assistant.journey.engine.model;
+package com.itways.assistant.journey.model.catalog;
 
 import java.util.List;
 

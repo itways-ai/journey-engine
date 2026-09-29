@@ -20,7 +20,6 @@ import com.itways.assistant.ai.dto.AiChatRequest;
 import com.itways.assistant.ai.dto.AiError;
 import com.itways.assistant.ai.dto.AiResponse;
 import com.itways.assistant.ai.service.AiService;
-import com.itways.assistant.journey.engine.config.TemplateRender;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.JourneyStep;

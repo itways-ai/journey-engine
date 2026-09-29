@@ -1,4 +1,4 @@
-package com.itways.assistant.journey.engine.model;
+package com.itways.assistant.journey.model.catalog;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

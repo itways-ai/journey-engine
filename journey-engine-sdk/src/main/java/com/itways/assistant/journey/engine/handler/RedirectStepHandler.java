@@ -12,7 +12,7 @@ import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.StepHandler;
-import com.itways.assistant.journey.engine.model.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
 

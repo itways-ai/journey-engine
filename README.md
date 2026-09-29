@@ -10,7 +10,7 @@ ports.
 
 | Module | Artifact | What it is |
 |---|---|---|
-| `journey-model` | `com.itways.assistant:journey-model` | The journey document and its statuses (`JourneyDefinition`, `JourneyStep`, `RunStatus`, `StepStatus`, `RunStepLog`, …). Plain data, no Spring. The service that stores journeys depends on this only. |
+| `journey-model` | `com.itways.assistant:journey-model` | The journey document and its statuses (`JourneyDefinition`, `JourneyStep`, `RunStatus`, `StepStatus`, `RunStepLog`, `RunHistoryEvent`, …), the step graph (`JourneyStepGraph`: parents, order, cycle check) and, in `model.catalog`, the step catalogue the builder reads (`StepDefinition`, `StepOutputSchema`, `OutputField`, `ChannelVariableSchema`, `ChannelVariableGroup`). Plain data, no Spring. The service that stores journeys depends on this only. |
 | `journey-engine-sdk` | `com.itways.assistant:journey-engine-sdk` | The engine, the step handlers, the ports and the Spring configuration. Pulls in Spring Boot, FreeMarker, GraalVM JS and `ai-engine-sdk`. |
 
 Both are released together at the version in the parent `pom.xml`.
@@ -49,11 +49,13 @@ A call runs steps until the journey ends or a step has to wait for someone.
   these buckets: the end-user token, the rehearsal flag, channel capabilities and
   nested-run bookkeeping live in `ExecutionContext.internal`. So they stay out of
   run history, CODE_SCRIPT and DATA_MAP prompts.
-- **Lifecycle.** Each run emits `JourneyRunLifecycleEvent`s to every
-  `JourneyRunLifecyclePort`: `RUNNING` at the start, then `WAITING`, `COMPLETED`
-  or `ERROR` at the end of each turn. Only `COMPLETED` and `ERROR` are final and
-  carry `completedAt` / `durationMs`. If the `RUNNING` call throws, the run does
-  not start.
+- **Lifecycle.** Each run emits `RunHistoryEvent`s (journey-model, the shape
+  run history stores) to every `JourneyRunLifecyclePort`: `RUNNING` at the
+  start, then `WAITING`, `COMPLETED` or `ERROR` at the end of each turn. Only
+  `COMPLETED` and `ERROR` are final and carry `completedAt` / `durationMs`.
+  `rootExecutionId` is always set, and `contextData` holds the run's
+  `variables` and `stepResults` as JSON, written with the host's
+  `ObjectMapper`. If the `RUNNING` call throws, the run does not start.
 - **Rehearsal.** Start a run with the param `simulate: true` to rehearse it.
   API_CALL and SEND_MAIL then return stubs instead of calling out, and no
   lifecycle events are emitted. Every other step runs for real.
@@ -92,6 +94,22 @@ A call runs steps until the journey ends or a step has to wait for someone.
 
 `StepOutputRegistry.getCatalog()` lists every handler's `describe()` for the
 builder UI.
+
+## Packages: what a host may use
+
+Each package has a `package-info.java` that says what it is and whether a host
+may use it. The package names are kept as they are (renaming them would be a
+breaking release for every host).
+
+| Package (`com.itways.assistant.journey.engine.…`) | Host-facing? | What it is |
+|---|---|---|
+| (root) | yes | `@EnableJourneyEngine`. |
+| `service` | yes: the SPI | `JourneyEngine` and `StepOutputRegistry` (the host calls them); the six `*Port` interfaces, `AiConfigProvider` and `TextTranslator` (the host implements them); `StepHandler` (to add a step type); `StepObserver`. `StepHandlerRegistry` is internal. |
+| `model` | yes | The data the SPI passes: `ExecutionContext`, `StepResult`, `MailConfig`, `TemplateRenderResult` (and `ApiConfig`, a step's parsed config). |
+| `context` | yes, except `VariableContext` | Reserved start-params the engine lifts out of the variables: `EndUserAuth`, `Simulation`, `ChannelCapabilities`, `ConversationParams`. |
+| `language` | yes, except `StepLocalizer` | `ConversationLanguage`, `LanguageDetector`, `LanguageParams`, `DecisionWords`, `Messages`, `EngineMessages`. |
+| `util` | only `VariablePath` | Placeholders, variable paths, egress rules, schema helpers. |
+| `config`, `impl`, `handler`, `validation` | no | Spring wiring, the run loop, the step handlers (and the engine's own FreeMarker `TemplateRender`), answer validation. |
 
 ## Ports the host implements
 
@@ -170,12 +188,15 @@ and AssertJ tests: no Spring context and no external services.
   the real `JourneyEngineImpl` with the real control-flow handlers
   (`EngineFixture`). They cover ordering, branching, jumps, pause and resume,
   failures, lifecycle events and nested journeys.
-- `engine/util/*Test` covers the pure utilities (egress rules, the step graph,
-  conditions, step keys).
+- `engine/util/*Test` and `engine/validation/*Test` cover the pure utilities
+  (egress rules, conditions, step keys, placeholders, variable paths, answer
+  validation).
+- `journey-model`'s `JourneyStepGraphTest` covers the step graph (order,
+  parents, cycles).
 
 API_CALL tests use a local HTTP server on the loopback interface.
 `ApiCallDnsRebindingTest` also needs `127.0.0.2`: it is skipped where that
 address is not routable (macOS), and it runs in the Linux container.
 
 To run one class: `mvn test -Dtest=UserInputStepHandlerTest -Dsurefire.failIfNoSpecifiedTests=false`
-(the flag stops `journey-model`, which has no matching test, from failing the build).
+(the flag stops the other module, which has no matching test, from failing the build).

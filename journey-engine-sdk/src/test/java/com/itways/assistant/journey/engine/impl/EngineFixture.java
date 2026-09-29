@@ -21,7 +21,7 @@ import com.itways.assistant.journey.engine.language.EngineMessages;
 import com.itways.assistant.journey.engine.language.LanguageDetector;
 import com.itways.assistant.journey.engine.language.StepLocalizer;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.engine.model.JourneyRunLifecycleEvent;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.JourneyRunLifecyclePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
@@ -47,7 +47,7 @@ final class EngineFixture {
     final VariableContext variables = new VariableContext();
     final StepOutputSchemaHelper schemas = new StepOutputSchemaHelper(json);
     final EngineMessages messages = new EngineMessages();
-    final List<JourneyRunLifecycleEvent> events = new ArrayList<>();
+    final List<RunHistoryEvent> events = new ArrayList<>();
     /** Step names, in the order the RECORD stub ran them. */
     final List<String> executed = new ArrayList<>();
     final StepHandlerRegistry registry;
@@ -126,10 +126,10 @@ final class EngineFixture {
     }
 
     List<RunStatus> statuses() {
-        return events.stream().map(JourneyRunLifecycleEvent::getStatus).toList();
+        return events.stream().map(RunHistoryEvent::status).toList();
     }
 
-    JourneyRunLifecycleEvent last() {
+    RunHistoryEvent last() {
         return events.get(events.size() - 1);
     }
 }

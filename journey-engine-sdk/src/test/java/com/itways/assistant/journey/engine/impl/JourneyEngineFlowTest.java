@@ -175,7 +175,7 @@ class JourneyEngineFlowTest {
         assertThat(result.get("status")).isEqualTo("ERROR");
         assertThat(result.get("message")).asString().startsWith("This request was stopped because it was repeating");
         assertThat(f.executed).hasSize(JourneyEngineImpl.MAX_JUMPS_PER_TURN + 1);
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.ERROR);
+        assertThat(f.last().status()).isEqualTo(RunStatus.ERROR);
     }
 
     // ───────────────────────── pause and resume ─────────────────────────
@@ -197,7 +197,7 @@ class JourneyEngineFlowTest {
         ExecutionContext parked = context(first);
         assertThat(parked.getStatus()).isEqualTo(ExecutionStatus.WAITING_FOR_INPUT);
         assertThat(f.statuses()).containsExactly(RunStatus.RUNNING, RunStatus.WAITING);
-        assertThat(f.last().getCompletedAt()).isNull();
+        assertThat(f.last().completedAt()).isNull();
 
         Map<String, Object> second = f.engine.resume(journey, parked, Map.of("answer", "Irbid"));
 
@@ -206,8 +206,8 @@ class JourneyEngineFlowTest {
         assertThat(second.get("executionId")).isEqualTo(first.get("executionId"));
         assertThat(trace(second)).containsExactly("USER_INPUT:SUCCESS", "RESPONSE:SUCCESS");
         assertThat(f.statuses()).containsExactly(RunStatus.RUNNING, RunStatus.WAITING, RunStatus.COMPLETED);
-        assertThat(f.last().getCompletedAt()).isNotNull();
-        assertThat(f.last().getExecutionId()).isEqualTo(first.get("executionId"));
+        assertThat(f.last().completedAt()).isNotNull();
+        assertThat(f.last().executionId()).isEqualTo(first.get("executionId"));
         assertThat(parked.getInternal("_pendingResumeInput")).isNull();
     }
 
@@ -233,8 +233,8 @@ class JourneyEngineFlowTest {
         assertThat(result.get("status")).isEqualTo("FINISHED");
         assertThat(f.executed).isEmpty();
         assertThat(views(result).get(0)).containsEntry("handoff", true).containsEntry("queue", "support");
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.COMPLETED);
-        assertThat(f.last().getCompletedAt()).isNotNull();
+        assertThat(f.last().status()).isEqualTo(RunStatus.COMPLETED);
+        assertThat(f.last().completedAt()).isNotNull();
     }
 
     // ───────────────────────── failures ─────────────────────────
@@ -260,9 +260,9 @@ class JourneyEngineFlowTest {
         assertThat(result.get("message")).isEqualTo("Something went wrong while handling your request. Please try again.");
         assertThat(views(result).get(1)).containsEntry("message", "TEMPLATE_RENDER: '{{id}}' is not a template id");
         assertThat(context(result).getStatus()).isEqualTo(ExecutionStatus.ERROR);
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.ERROR);
-        assertThat(f.last().getCompletedAt()).isNotNull();
-        assertThat(f.last().getStepLogs()).hasSize(2);
+        assertThat(f.last().status()).isEqualTo(RunStatus.ERROR);
+        assertThat(f.last().completedAt()).isNotNull();
+        assertThat(f.last().stepLogs()).hasSize(2);
     }
 
     @Test
@@ -272,7 +272,7 @@ class JourneyEngineFlowTest {
 
         assertThat(result.get("message")).isEqualTo("Your request was declined.");
         assertThat(views(result).get(0)).containsEntry("detail", "rejected by approver");
-        assertThat(f.last().getStepLogs().get(0).detail()).isEqualTo("rejected by approver");
+        assertThat(f.last().stepLogs().get(0).detail()).isEqualTo("rejected by approver");
     }
 
     @Test
@@ -286,7 +286,7 @@ class JourneyEngineFlowTest {
         assertThat(result.get("status")).isEqualTo("FINISHED");
         assertThat(trace(result)).containsExactly("RECORD:SUCCESS", "FAIL:ERROR", "RESPONSE:SUCCESS");
         assertThat(result.get("message")).isEqualTo("step 2 said FAILED");
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.COMPLETED);
+        assertThat(f.last().status()).isEqualTo(RunStatus.COMPLETED);
     }
 
     @Test
@@ -319,7 +319,7 @@ class JourneyEngineFlowTest {
 
         assertThat(result.get("status")).isEqualTo("ERROR");
         assertThat(f.executed).isEmpty();
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.ERROR);
+        assertThat(f.last().status()).isEqualTo(RunStatus.ERROR);
     }
 
     @Test
@@ -328,7 +328,7 @@ class JourneyEngineFlowTest {
 
         assertThat(result.get("status")).isEqualTo("FINISHED");
         assertThat(result.get("message")).isEqualTo("This journey has no steps configured.");
-        assertThat(f.last().getStatus()).isEqualTo(RunStatus.COMPLETED);
+        assertThat(f.last().status()).isEqualTo(RunStatus.COMPLETED);
     }
 
     // ───────────────────────── rehearsal ─────────────────────────

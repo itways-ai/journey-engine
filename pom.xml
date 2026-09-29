@@ -9,7 +9,9 @@
 
           journey-model       the journey document and its statuses — what
                               journey-service stores and serves, and what the
-                              engine executes. Plain data, no Spring.
+                              engine executes — plus the step catalogue types
+                              the builder reads and the step graph both use.
+                              Plain data, no Spring.
           journey-engine-sdk  the engine that runs it.
 
         journey-service needs the first and must not pull in the second (GraalVM,
@@ -17,7 +19,7 @@
     -->
     <groupId>com.itways.assistant</groupId>
     <artifactId>journey-engine-parent</artifactId>
-    <version>1.0.17</version>
+    <version>1.0.18</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -31,6 +33,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lombok.version>1.18.30</lombok.version>
         <jackson.version>2.15.3</jackson.version>
+        <junit.version>5.10.1</junit.version>
+        <assertj.version>3.24.2</assertj.version>
     </properties>
 
     <build>

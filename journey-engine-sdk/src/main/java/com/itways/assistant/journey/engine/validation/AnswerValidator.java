@@ -183,7 +183,6 @@ public final class AnswerValidator {
         }
     }
 
-    /** Field names any conditional rule can act on — exempt from required. */
     /**
      * The fields a channel without a form has to ask for, in declared order.
      *
@@ -205,6 +204,7 @@ public final class AnswerValidator {
         return askable;
     }
 
+    /** Field names any conditional rule can act on — exempt from required. */
     private static Set<String> conditionalFields(Object rulesConfig) {
         Set<String> names = new HashSet<>();
         for (Map<String, Object> rule : asMapList(rulesConfig)) {

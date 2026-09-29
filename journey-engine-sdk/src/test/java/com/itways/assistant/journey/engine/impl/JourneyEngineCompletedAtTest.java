@@ -15,7 +15,7 @@ import com.itways.assistant.journey.engine.language.EngineMessages;
 import com.itways.assistant.journey.engine.language.LanguageDetector;
 import com.itways.assistant.journey.engine.language.StepLocalizer;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.engine.model.JourneyRunLifecycleEvent;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.JourneyRunLifecyclePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
@@ -33,7 +33,7 @@ import com.itways.assistant.journey.model.RunStatus;
  */
 class JourneyEngineCompletedAtTest {
 
-    private final List<JourneyRunLifecycleEvent> events = new ArrayList<>();
+    private final List<RunHistoryEvent> events = new ArrayList<>();
 
     private static StepHandler handler(String type, StepResult result) {
         return new StepHandler() {
@@ -69,34 +69,34 @@ class JourneyEngineCompletedAtTest {
                 .build();
     }
 
-    private JourneyRunLifecycleEvent last(RunStatus status) {
-        return events.stream().filter(e -> e.getStatus() == status).reduce((a, b) -> b).orElseThrow();
+    private RunHistoryEvent last(RunStatus status) {
+        return events.stream().filter(e -> e.status() == status).reduce((a, b) -> b).orElseThrow();
     }
 
     @Test
     void aWaitingRunHasNoCompletionTime() {
         engine().start(journey("WAIT_HERE"), "acc-1", null, Map.of());
 
-        assertThat(last(RunStatus.RUNNING).getCompletedAt()).isNull();
-        JourneyRunLifecycleEvent waiting = last(RunStatus.WAITING);
-        assertThat(waiting.getCompletedAt()).isNull();
-        assertThat(waiting.getDurationMs()).isNull();
+        assertThat(last(RunStatus.RUNNING).completedAt()).isNull();
+        RunHistoryEvent waiting = last(RunStatus.WAITING);
+        assertThat(waiting.completedAt()).isNull();
+        assertThat(waiting.durationMs()).isNull();
     }
 
     @Test
     void aCompletedRunHasACompletionTime() {
         engine().start(journey("PASS_HERE"), "acc-1", null, Map.of());
 
-        JourneyRunLifecycleEvent completed = last(RunStatus.COMPLETED);
-        assertThat(completed.getCompletedAt()).isNotNull();
-        assertThat(completed.getDurationMs()).isNotNull();
+        RunHistoryEvent completed = last(RunStatus.COMPLETED);
+        assertThat(completed.completedAt()).isNotNull();
+        assertThat(completed.durationMs()).isNotNull();
     }
 
     @Test
     void aFailedRunHasACompletionTime() {
         engine().start(journey("FAIL_HERE"), "acc-1", null, Map.of());
 
-        assertThat(last(RunStatus.ERROR).getCompletedAt()).isNotNull();
+        assertThat(last(RunStatus.ERROR).completedAt()).isNotNull();
     }
 
     @Test

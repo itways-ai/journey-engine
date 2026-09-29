@@ -1,11 +1,13 @@
 package com.itways.assistant.journey.engine.impl;
 
 import com.itways.assistant.journey.model.RunStepLog;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.model.RunStatus;
 import com.itways.assistant.journey.model.StepStatus;
 import com.itways.assistant.journey.model.ExecutionStatus;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.JourneyStep;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.context.EndUserAuth;
 import com.itways.assistant.journey.engine.language.EngineMessages;
@@ -21,7 +23,7 @@ import com.itways.assistant.journey.engine.service.StepHandler;
 import com.itways.assistant.journey.engine.service.StepObserver;
 import com.itways.assistant.journey.engine.service.StepHandlerRegistry;
 import com.itways.assistant.journey.engine.util.EngineUtils;
-import com.itways.assistant.journey.engine.util.JourneyStepGraph;
+import com.itways.assistant.journey.model.JourneyStepGraph;
 import com.itways.assistant.journey.engine.util.VariableDiagnostics;
 import com.itways.assistant.journey.engine.util.VariablePath;
 import lombok.extern.slf4j.Slf4j;
@@ -141,13 +143,12 @@ public class JourneyEngineImpl implements JourneyEngine {
 
         seedRuntime(journey, context);
 
-        // Durable RUNNING row before any business step; failure aborts the run.
-        // Durable RUNNING row before any business step — except in a rehearsal,
-        // which must leave no trace: run history is what the journey's analytics
-        // are computed from, and an author testing a flow twenty times would
-        // otherwise bury the real traffic in it.
+        // Durable RUNNING row before any business step (a failure aborts the
+        // run) — except in a rehearsal, which must leave no trace: run history
+        // is what the journey's analytics are computed from, and an author
+        // testing a flow twenty times would otherwise bury the real traffic in it.
         if (!com.itways.assistant.journey.engine.context.Simulation.isActive(context)) {
-            emitLifecycle(buildLifecycleEvent(journey, context, RunStatus.RUNNING, null, null));
+            emitLifecycle(journey, context);
         }
 
         return finalizeResult(journey, context, execute(journey, context, observer));
@@ -568,14 +569,11 @@ public class JourneyEngineImpl implements JourneyEngine {
         String message = result.get("message") != null ? String.valueOf(result.get("message")) : null;
 
         if ("WAITING".equals(status)) {
-            emitLifecycleSoft(buildLifecycleEvent(journey, context, RunStatus.WAITING,
-                    stepLogs, message));
+            emitLifecycleSoft(journey, context, RunStatus.WAITING, stepLogs, message);
         } else if ("ERROR".equals(status)) {
-            emitLifecycleSoft(buildLifecycleEvent(journey, context, RunStatus.ERROR,
-                    stepLogs, message));
+            emitLifecycleSoft(journey, context, RunStatus.ERROR, stepLogs, message);
         } else if ("FINISHED".equals(status) || "COMPLETED".equals(status)) {
-            emitLifecycleSoft(buildLifecycleEvent(journey, context, RunStatus.COMPLETED,
-                    stepLogs, message));
+            emitLifecycleSoft(journey, context, RunStatus.COMPLETED, stepLogs, message);
         }
         return result;
     }
@@ -586,9 +584,18 @@ public class JourneyEngineImpl implements JourneyEngine {
         result.put("rootExecutionId", context.getRootExecutionId());
     }
 
-    private JourneyRunLifecycleEvent buildLifecycleEvent(JourneyDefinition journey, ExecutionContext context,
-                                                         RunStatus status, List<Map<String, Object>> stepLogs,
-                                                         String message) {
+    /**
+     * The lifecycle event in the shape run history stores it. {@code contextData}
+     * is the run's variables and step results as JSON, written with the host's
+     * {@link ObjectMapper}; a run without a root (a context stored before
+     * nested runs existed) is its own root.
+     *
+     * @throws JsonProcessingException when the run's variables cannot be
+     *                                 written as JSON
+     */
+    private RunHistoryEvent buildLifecycleEvent(JourneyDefinition journey, ExecutionContext context,
+                                                RunStatus status, List<Map<String, Object>> stepLogs,
+                                                String message) throws JsonProcessingException {
         Date completedAt = null;
         Long durationMs = null;
         // Only a run that has ended gets a completion time (JRN-07). A WAITING run
@@ -616,38 +623,68 @@ public class JourneyEngineImpl implements JourneyEngine {
         }
         String userId = userIdValue != null ? String.valueOf(userIdValue) : null;
 
-        return JourneyRunLifecycleEvent.builder()
-                .executionId(context.getExecutionId())
-                .parentExecutionId(context.getParentExecutionId())
-                .rootExecutionId(context.getRootExecutionId())
-                .journeyId(context.getJourneyId() != null ? context.getJourneyId() : journey.getId())
-                .accountId(context.getAccountId())
-                .triggerIntent(journey.getTriggerIntent())
-                .status(status)
-                .startedAt(context.getStartedAt())
-                .completedAt(completedAt)
-                .durationMs(durationMs)
-                .userId(userId)
-                .message(message)
-                .stepLogs(toStepLogs(stepLogs))
-                .variables(context.getVariables() != null ? new HashMap<>(context.getVariables()) : Map.of())
-                .stepResults(stepResultsMap)
-                .build();
+        Map<String, Object> contextData = new HashMap<>();
+        contextData.put("variables", context.getVariables() != null ? new HashMap<>(context.getVariables()) : Map.of());
+        contextData.put("stepResults", stepResultsMap);
+        String contextJson = objectMapper.writeValueAsString(contextData);
+
+        // The account is not carried: journey-service takes it from the caller's
+        // credential. Times are instants at millisecond precision (from Date).
+        return new RunHistoryEvent(
+                context.getJourneyId() != null ? context.getJourneyId() : journey.getId(),
+                status,
+                context.getExecutionId(),
+                context.getParentExecutionId(),
+                context.getRootExecutionId() != null ? context.getRootExecutionId() : context.getExecutionId(),
+                journey.getTriggerIntent(),
+                userId,
+                message,
+                durationMs,
+                context.getStartedAt() != null ? context.getStartedAt().toInstant() : null,
+                completedAt != null ? completedAt.toInstant() : null,
+                contextJson,
+                toStepLogs(stepLogs));
     }
 
-    private void emitLifecycle(JourneyRunLifecycleEvent event) {
+    /** RUNNING: a failure here — writing the event or in a port — aborts the run before any step executes. */
+    private void emitLifecycle(JourneyDefinition journey, ExecutionContext context) {
+        if (lifecyclePorts.isEmpty()) {
+            return;
+        }
+        RunHistoryEvent event;
+        try {
+            event = buildLifecycleEvent(journey, context, RunStatus.RUNNING, null, null);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to write the run context of " + context.getExecutionId()
+                    + " status=" + RunStatus.RUNNING, e);
+        }
         for (JourneyRunLifecyclePort port : lifecyclePorts) {
             port.onLifecycleEvent(event);
         }
     }
 
-    private void emitLifecycleSoft(JourneyRunLifecycleEvent event) {
+    /**
+     * End of a turn: the turn's outcome stands whatever happens here, so a
+     * failure — writing the event or in a port — is logged, not thrown.
+     */
+    private void emitLifecycleSoft(JourneyDefinition journey, ExecutionContext context, RunStatus status,
+                                   List<Map<String, Object>> stepLogs, String message) {
+        if (lifecyclePorts.isEmpty()) {
+            return;
+        }
+        RunHistoryEvent event;
+        try {
+            event = buildLifecycleEvent(journey, context, status, stepLogs, message);
+        } catch (JsonProcessingException e) {
+            log.error("Lifecycle update failed for executionId={} status={}", context.getExecutionId(), status, e);
+            return;
+        }
         for (JourneyRunLifecyclePort port : lifecyclePorts) {
             try {
                 port.onLifecycleEvent(event);
             } catch (Exception e) {
                 log.error("Lifecycle update failed for executionId={} status={}",
-                        event.getExecutionId(), event.getStatus(), e);
+                        event.executionId(), event.status(), e);
             }
         }
     }

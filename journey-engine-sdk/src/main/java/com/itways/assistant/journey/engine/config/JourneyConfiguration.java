@@ -3,7 +3,6 @@ package com.itways.assistant.journey.engine.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.ui.freemarker.FreeMarkerConfigurationFactoryBean;
 
@@ -24,7 +23,6 @@ public class JourneyConfiguration {
 		log.info("✅ Journey Engine SDK configuration initialized");
 	}
 
-//	@Primary
 	@Bean(name = "sdkRenderConfig")
 	public freemarker.template.Configuration sdkRenderConfig() throws Exception {
 		FreeMarkerConfigurationFactoryBean factoryBean = new FreeMarkerConfigurationFactoryBean();

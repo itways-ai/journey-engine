@@ -10,8 +10,8 @@ import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.model.ApiConfig;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.model.JourneyStep;
-import com.itways.assistant.journey.engine.model.StepDefinition;
-import com.itways.assistant.journey.engine.model.StepOutputSchema;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepOutputSchema;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.StepHandler;
 import com.itways.assistant.journey.engine.util.EngineUtils;
@@ -45,8 +45,8 @@ public class DocumentInsightStepHandler implements StepHandler {
         return StepOutputSchema.builder()
                 .stepType("DOCUMENT_INSIGHT")
                 .fields(java.util.List.of(
-                        com.itways.assistant.journey.engine.model.OutputField.of("output", "Extracted Content", "object"),
-                        com.itways.assistant.journey.engine.model.OutputField.of("output.metadata", "Metadata", "object")))
+                        com.itways.assistant.journey.model.catalog.OutputField.of("output", "Extracted Content", "object"),
+                        com.itways.assistant.journey.model.catalog.OutputField.of("output.metadata", "Metadata", "object")))
                 .build();
     }
 

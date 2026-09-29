@@ -8,6 +8,8 @@ import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.language.ConversationLanguage;
 import com.itways.assistant.journey.engine.language.EngineMessages;
 import com.itways.assistant.journey.engine.model.*;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepOutputSchema;
 import com.itways.assistant.journey.engine.service.KnowledgeBasePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
 import com.itways.assistant.journey.engine.service.TextTranslator;
@@ -259,12 +261,6 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
                 log.info("🌟 Sure Match bypassed gap check! Score: {}", bestScore);
                 return respond(step, context, query, results, bestMatch, config);
             }
-
-//            // Guard 2
-//            if (bestScore < SURE_MATCH_THRESHOLD && actualGap < MIN_RELATIVE_GAP) {
-//                log.warn("⚠️ Ambiguous result cluster detected. Actual gap of {} is less than required {}. Forcing fallback to protect domain accuracy.", actualGap, MIN_RELATIVE_GAP);
-//                return triggerFallback(step,context,fallbackMsg);
-//            }
 
             // GUARD 3: The "Soft Match" / Cross-Lingual Zone
             if(actualGap < MIN_RELATIVE_GAP) {

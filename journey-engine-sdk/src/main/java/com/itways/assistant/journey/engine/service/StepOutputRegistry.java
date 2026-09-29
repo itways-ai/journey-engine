@@ -1,8 +1,8 @@
 package com.itways.assistant.journey.engine.service;
 
 import com.itways.assistant.journey.model.JourneyStep;
-import com.itways.assistant.journey.engine.model.StepDefinition;
-import com.itways.assistant.journey.engine.model.StepOutputSchema;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepOutputSchema;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;

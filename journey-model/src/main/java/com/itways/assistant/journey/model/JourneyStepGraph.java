@@ -1,13 +1,16 @@
-package com.itways.assistant.journey.engine.util;
-
-import com.itways.assistant.journey.model.JourneyStep;
+package com.itways.assistant.journey.model;
 
 import java.util.*;
 import java.util.function.IntFunction;
 
 /**
- * Stateless graph utilities for JourneyStep ordering and cycle detection.
- * Used by both the engine (execution sorting) and the service (save-time validation).
+ * The parent links between a journey's steps: which steps a step branches
+ * from, the order the engine runs them in, and whether the links form a cycle.
+ *
+ * <p>
+ * Pure and stateless, so the service that stores journeys (save-time
+ * validation) and the engine that runs them (execution order) read the links
+ * the same way.
  */
 public final class JourneyStepGraph {
 
@@ -143,5 +146,44 @@ public final class JourneyStepGraph {
         }
 
         return visited < stepCount;
+    }
+
+    /**
+     * Returns true if the parent links of these steps form a cycle (Kahn's
+     * algorithm). Unlike {@link #hasCycle(int, IntFunction)}, the orders need
+     * not run 1..n: the map is keyed by whatever order the caller assigns (for
+     * example a step's position when its order is unset). Parent links to an
+     * order that is not a key are ignored.
+     *
+     * @param stepsByOrder the steps, keyed by their order
+     */
+    public static boolean hasCycle(Map<Integer, JourneyStep> stepsByOrder) {
+        Map<Integer, List<Integer>> children = new HashMap<>();
+        Map<Integer, Integer>       inDegree = new HashMap<>();
+        stepsByOrder.keySet().forEach(order -> inDegree.put(order, 0));
+
+        for (Map.Entry<Integer, JourneyStep> entry : stepsByOrder.entrySet()) {
+            for (Integer parent : resolveInboundParents(entry.getValue())) {
+                if (parent != null && stepsByOrder.containsKey(parent)) {
+                    children.computeIfAbsent(parent, k -> new ArrayList<>()).add(entry.getKey());
+                    inDegree.merge(entry.getKey(), 1, Integer::sum);
+                }
+            }
+        }
+
+        Queue<Integer> ready = new ArrayDeque<>();
+        inDegree.forEach((order, degree) -> { if (degree == 0) ready.add(order); });
+
+        int visited = 0;
+        while (!ready.isEmpty()) {
+            int order = ready.poll();
+            visited++;
+            for (int child : children.getOrDefault(order, Collections.emptyList())) {
+                if (inDegree.merge(child, -1, Integer::sum) == 0) {
+                    ready.add(child);
+                }
+            }
+        }
+        return visited < stepsByOrder.size();
     }
 }

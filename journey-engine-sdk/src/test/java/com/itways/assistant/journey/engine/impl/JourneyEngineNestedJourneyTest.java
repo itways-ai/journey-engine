@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.itways.assistant.journey.engine.handler.TriggerJourneyStepHandler;
-import com.itways.assistant.journey.engine.model.JourneyRunLifecycleEvent;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.engine.service.JourneyLookupPort;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.JourneyStep;
@@ -59,8 +59,8 @@ class JourneyEngineNestedJourneyTest {
         byVersion.put(id * 10, journey);
     }
 
-    private List<JourneyRunLifecycleEvent> eventsOf(Object executionId) {
-        return f.events.stream().filter(e -> e.getExecutionId().equals(executionId)).toList();
+    private List<RunHistoryEvent> eventsOf(Object executionId) {
+        return f.events.stream().filter(e -> e.executionId().equals(executionId)).toList();
     }
 
     private void orderJourneys() {
@@ -88,14 +88,14 @@ class JourneyEngineNestedJourneyTest {
         assertThat(lookedUpFor).containsExactly(assistant);
 
         String parentId = (String) first.get("executionId");
-        JourneyRunLifecycleEvent childRunning = f.events.stream()
-                .filter(e -> parentId.equals(e.getParentExecutionId())).findFirst().orElseThrow();
-        String childId = childRunning.getExecutionId();
+        RunHistoryEvent childRunning = f.events.stream()
+                .filter(e -> parentId.equals(e.parentExecutionId())).findFirst().orElseThrow();
+        String childId = childRunning.executionId();
         assertThat(childId).isNotEqualTo(parentId);
-        assertThat(childRunning.getRootExecutionId()).isEqualTo(parentId);
-        assertThat(eventsOf(childId)).extracting(JourneyRunLifecycleEvent::getStatus)
+        assertThat(childRunning.rootExecutionId()).isEqualTo(parentId);
+        assertThat(eventsOf(childId)).extracting(RunHistoryEvent::status)
                 .containsExactly(RunStatus.RUNNING, RunStatus.WAITING);
-        assertThat(eventsOf(parentId)).extracting(JourneyRunLifecycleEvent::getStatus)
+        assertThat(eventsOf(parentId)).extracting(RunHistoryEvent::status)
                 .containsExactly(RunStatus.RUNNING, RunStatus.WAITING);
 
         Map<String, Object> second = f.engine.resume(main, context(first), Map.of("answer", "A-17"));
@@ -104,9 +104,9 @@ class JourneyEngineNestedJourneyTest {
         assertThat(second.get("message")).isEqualTo("Order A-17 ships today. Anything else?");
         assertThat(trace(second)).containsExactly("USER_INPUT:SUCCESS", "RESPONSE:SUCCESS", "TRIGGER_JOURNEY:SUCCESS",
                 "RESPONSE:SUCCESS");
-        assertThat(eventsOf(childId)).extracting(JourneyRunLifecycleEvent::getStatus)
+        assertThat(eventsOf(childId)).extracting(RunHistoryEvent::status)
                 .containsExactly(RunStatus.RUNNING, RunStatus.WAITING, RunStatus.COMPLETED);
-        assertThat(eventsOf(parentId)).extracting(JourneyRunLifecycleEvent::getStatus)
+        assertThat(eventsOf(parentId)).extracting(RunHistoryEvent::status)
                 .containsExactly(RunStatus.RUNNING, RunStatus.WAITING, RunStatus.COMPLETED);
         assertThat(context(first).getInternal(TriggerJourneyStepHandler.ACTIVE_TRIGGERED_JOURNEY)).isNull();
     }

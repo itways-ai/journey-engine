@@ -2,7 +2,7 @@ package com.itways.assistant.journey.engine.util;
 
 import java.util.Map;
 
-import com.itways.assistant.journey.engine.model.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
 
 /**
  * How well each step type works on each kind of channel — the console's

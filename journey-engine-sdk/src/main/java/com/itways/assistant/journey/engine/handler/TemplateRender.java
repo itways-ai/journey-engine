@@ -1,9 +1,8 @@
-package com.itways.assistant.journey.engine.config;
+package com.itways.assistant.journey.engine.handler;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,6 +15,20 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+/**
+ * FreeMarker rendering inside the engine: DATA_MAP builds its prompt with
+ * {@link #renderFromString}. File templates are read with the engine's own
+ * {@code sdkRenderConfig} bean (missing values skipped, classic compatible).
+ *
+ * <p>
+ * common-lib has a near-identical {@code com.itways.freemarker.TemplateRender}.
+ * The engine keeps this copy on purpose: the SDK must not depend on
+ * common-lib's web/messaging parts, which is where that helper lives, and this
+ * copy is bound to the engine's configuration rather than the host's primary
+ * FreeMarker {@code Configuration}. Internal to the engine, not for hosts;
+ * stored templates are rendered through {@code TemplateRenderPort}
+ * (TEMPLATE_RENDER).
+ */
 @Slf4j
 @Component
 public class TemplateRender {

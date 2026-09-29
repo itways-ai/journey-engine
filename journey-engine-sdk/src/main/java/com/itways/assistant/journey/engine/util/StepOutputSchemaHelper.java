@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.model.ApiConfig;
 import com.itways.assistant.journey.model.JourneyStep;
-import com.itways.assistant.journey.engine.model.OutputField;
-import com.itways.assistant.journey.engine.model.StepDefinition;
-import com.itways.assistant.journey.engine.model.StepOutputSchema;
+import com.itways.assistant.journey.model.catalog.OutputField;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
+import com.itways.assistant.journey.model.catalog.StepOutputSchema;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
