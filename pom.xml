@@ -43,4 +43,14 @@
         <module>journey-engine-sdk</module>
     </modules>
 
+    <build>
+        <plugins>
+            <!-- The shared formatter, configured in platform-parent: `mvn spotless:apply` / `mvn spotless:check`. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
