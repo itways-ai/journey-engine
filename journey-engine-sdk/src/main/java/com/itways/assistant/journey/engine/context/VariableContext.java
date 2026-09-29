@@ -2,14 +2,13 @@ package com.itways.assistant.journey.engine.context;
 
 import com.itways.assistant.journey.engine.language.LanguageParams;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.engine.util.Placeholders;
 import com.itways.assistant.journey.engine.util.VariablePath;
-import org.springframework.stereotype.Component;
-
+import com.itways.assistant.journey.model.JourneyStep;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 @Component
 public class VariableContext {

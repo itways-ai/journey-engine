@@ -9,14 +9,6 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.output
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.context.EndUserAuth;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
@@ -27,6 +19,12 @@ import com.itways.assistant.journey.model.ExecutionStatus;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
 
 /**
  * TRIGGER_JOURNEY in isolation: a stand-in engine records what the handler asks

@@ -1,9 +1,8 @@
 package com.itways.assistant.journey.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * One lifecycle event of a run, as the engine's host reports it to

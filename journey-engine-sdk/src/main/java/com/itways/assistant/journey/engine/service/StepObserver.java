@@ -30,9 +30,9 @@ import java.util.Map;
 @FunctionalInterface
 public interface StepObserver {
 
-	/** No-op observer for callers that do not stream. */
-	StepObserver NOOP = view -> {
-	};
+    /** No-op observer for callers that do not stream. */
+    StepObserver NOOP = view -> {
+    };
 
-	void onStep(Map<String, Object> stepView);
+    void onStep(Map<String, Object> stepView);
 }

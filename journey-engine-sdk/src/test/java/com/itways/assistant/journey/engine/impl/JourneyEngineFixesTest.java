@@ -5,20 +5,14 @@ import static com.itways.assistant.journey.engine.impl.EngineFixture.journey;
 import static com.itways.assistant.journey.engine.impl.EngineFixture.step;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.context.Simulation;
 import com.itways.assistant.journey.engine.handler.TriggerJourneyStepHandler;
-import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.service.JourneyLookupPort;
 import com.itways.assistant.journey.model.JourneyDefinition;
-import com.itways.assistant.journey.model.JourneyStep;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
 
 /**
  * Regression tests for engine defects found while writing the LIB-04 tests.

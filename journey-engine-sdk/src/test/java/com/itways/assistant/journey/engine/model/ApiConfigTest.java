@@ -2,9 +2,8 @@ package com.itways.assistant.journey.engine.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
 
 /** A step's config has the same defaults however it is made: builder, no-args constructor or JSON. */
 class ApiConfigTest {

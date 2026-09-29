@@ -7,11 +7,10 @@ import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.catalog.OutputField;
 import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.model.catalog.StepOutputSchema;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 @Component
 public class StepOutputSchemaHelper {

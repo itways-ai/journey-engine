@@ -11,18 +11,16 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.output
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.context.ChannelCapabilities;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.ExecutionStatus;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * USER_INPUT parks the run on a question and, on the resumed turn, validates

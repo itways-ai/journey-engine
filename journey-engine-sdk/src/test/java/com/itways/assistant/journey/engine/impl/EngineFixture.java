@@ -1,12 +1,5 @@
 package com.itways.assistant.journey.engine.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-
-import org.springframework.beans.factory.support.StaticListableBeanFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.handler.ConditionStepHandler;
@@ -21,7 +14,6 @@ import com.itways.assistant.journey.engine.language.EngineMessages;
 import com.itways.assistant.journey.engine.language.LanguageDetector;
 import com.itways.assistant.journey.engine.language.StepLocalizer;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.JourneyRunLifecyclePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
@@ -32,7 +24,13 @@ import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.model.RunStatus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 /**
  * The real engine with the real control-flow handlers (CONDITION, SWITCH, JUMP,

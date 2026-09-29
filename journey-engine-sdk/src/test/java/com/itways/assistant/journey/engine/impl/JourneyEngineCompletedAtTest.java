@@ -2,20 +2,12 @@ package com.itways.assistant.journey.engine.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.support.StaticListableBeanFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.language.EngineMessages;
 import com.itways.assistant.journey.engine.language.LanguageDetector;
 import com.itways.assistant.journey.engine.language.StepLocalizer;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.JourneyRunLifecyclePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
@@ -25,7 +17,13 @@ import com.itways.assistant.journey.engine.service.TextTranslator;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.model.RunStatus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 /**
  * JRN-07: only a run that has ended carries a completion time. A WAITING run

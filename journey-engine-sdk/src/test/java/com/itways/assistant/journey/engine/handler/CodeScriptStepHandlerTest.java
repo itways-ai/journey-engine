@@ -9,15 +9,13 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.output
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * CODE_SCRIPT runs author JavaScript in a GraalVM sandbox over a JSON copy of

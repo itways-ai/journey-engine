@@ -1,23 +1,20 @@
 package com.itways.assistant.journey.engine.handler;
 
-import com.itways.assistant.journey.model.StepStatus;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
-import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.engine.service.StepHandler;
-import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
-
+import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.StepStatus;
+import com.itways.assistant.journey.model.catalog.StepDefinition;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component

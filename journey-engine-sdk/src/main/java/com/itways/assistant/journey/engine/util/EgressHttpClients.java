@@ -1,7 +1,6 @@
 package com.itways.assistant.journey.engine.util;
 
 import java.time.Duration;
-
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -33,37 +32,37 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
  */
 public final class EgressHttpClients {
 
-	/** Calls run on the request thread; a caller waits for a pooled connection no longer than for a connect. */
-	private static final int MAX_CONNECTIONS = 200;
-	private static final int MAX_CONNECTIONS_PER_HOST = 50;
+    /** Calls run on the request thread; a caller waits for a pooled connection no longer than for a connect. */
+    private static final int MAX_CONNECTIONS = 200;
+    private static final int MAX_CONNECTIONS_PER_HOST = 50;
 
-	private EgressHttpClients() {
-	}
+    private EgressHttpClients() {
+    }
 
-	public static CloseableHttpClient client(EgressGuard guard, Duration connectTimeout, Duration readTimeout) {
-		PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
-				.setDnsResolver(new EgressDnsResolver(guard))
-				.setMaxConnTotal(MAX_CONNECTIONS)
-				.setMaxConnPerRoute(MAX_CONNECTIONS_PER_HOST)
-				.setDefaultConnectionConfig(ConnectionConfig.custom()
-						.setConnectTimeout(Timeout.of(connectTimeout))
-						.setSocketTimeout(Timeout.of(readTimeout))
-						.build())
-				.build();
-		return HttpClients.custom()
-				.setConnectionManager(connections)
-				.setDefaultRequestConfig(RequestConfig.custom()
-						.setConnectionRequestTimeout(Timeout.of(connectTimeout))
-						.setResponseTimeout(Timeout.of(readTimeout))
-						.build())
-				.disableRedirectHandling()
-				.disableCookieManagement()
-				.build();
-	}
+    public static CloseableHttpClient client(EgressGuard guard, Duration connectTimeout, Duration readTimeout) {
+        PoolingHttpClientConnectionManager connections = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDnsResolver(new EgressDnsResolver(guard))
+                .setMaxConnTotal(MAX_CONNECTIONS)
+                .setMaxConnPerRoute(MAX_CONNECTIONS_PER_HOST)
+                .setDefaultConnectionConfig(ConnectionConfig.custom()
+                        .setConnectTimeout(Timeout.of(connectTimeout))
+                        .setSocketTimeout(Timeout.of(readTimeout))
+                        .build())
+                .build();
+        return HttpClients.custom()
+                .setConnectionManager(connections)
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectionRequestTimeout(Timeout.of(connectTimeout))
+                        .setResponseTimeout(Timeout.of(readTimeout))
+                        .build())
+                .disableRedirectHandling()
+                .disableCookieManagement()
+                .build();
+    }
 
-	/** The same, for Spring's {@code RestTemplate} and {@code RestClient}. */
-	public static HttpComponentsClientHttpRequestFactory requestFactory(EgressGuard guard, Duration connectTimeout,
-			Duration readTimeout) {
-		return new HttpComponentsClientHttpRequestFactory(client(guard, connectTimeout, readTimeout));
-	}
+    /** The same, for Spring's {@code RestTemplate} and {@code RestClient}. */
+    public static HttpComponentsClientHttpRequestFactory requestFactory(EgressGuard guard, Duration connectTimeout,
+            Duration readTimeout) {
+        return new HttpComponentsClientHttpRequestFactory(client(guard, connectTimeout, readTimeout));
+    }
 }

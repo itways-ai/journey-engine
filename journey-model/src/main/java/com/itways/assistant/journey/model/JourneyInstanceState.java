@@ -1,8 +1,7 @@
 package com.itways.assistant.journey.model;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.UUID;
 
 /**
  * A parked run: what is saved when a journey waits for the user, and what a

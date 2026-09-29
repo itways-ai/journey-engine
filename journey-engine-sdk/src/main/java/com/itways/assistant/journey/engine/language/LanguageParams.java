@@ -1,8 +1,7 @@
 package com.itways.assistant.journey.engine.language;
 
-import java.util.Map;
-
 import com.itways.assistant.journey.engine.model.ExecutionContext;
+import java.util.Map;
 
 /**
  * Carries the resolved conversation language into a run.

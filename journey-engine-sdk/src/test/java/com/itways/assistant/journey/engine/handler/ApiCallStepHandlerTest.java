@@ -10,18 +10,6 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.stepField;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.context.EndUserAuth;
 import com.itways.assistant.journey.engine.context.Simulation;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
@@ -30,6 +18,16 @@ import com.itways.assistant.journey.engine.util.EgressGuard;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
 import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * API_CALL beyond DNS rebinding (ApiCallDnsRebindingTest): a rehearsal calls

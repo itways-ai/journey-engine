@@ -3,11 +3,10 @@ package com.itways.assistant.journey.engine.service;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.model.catalog.StepOutputSchema;
-import org.springframework.stereotype.Service;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Service;
 
 @Service
 public class StepOutputRegistry {

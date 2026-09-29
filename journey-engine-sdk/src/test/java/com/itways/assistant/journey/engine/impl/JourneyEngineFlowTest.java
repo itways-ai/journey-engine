@@ -8,20 +8,18 @@ import static com.itways.assistant.journey.engine.impl.EngineFixture.trace;
 import static com.itways.assistant.journey.engine.impl.EngineFixture.views;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.context.Simulation;
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.ExecutionStatus;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.RunStatus;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
 
 /**
  * JourneyEngineImpl's core loop, run for real: ordering, CONDITION / SWITCH /

@@ -1,18 +1,15 @@
 package com.itways.assistant.journey.engine.language;
 
-import com.itways.assistant.journey.model.StepText;
-import java.util.Map;
-
-import org.springframework.stereotype.Component;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.engine.service.StepTextPort;
 import com.itways.assistant.journey.engine.service.TextTranslator;
-
+import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.StepText;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
  * Swaps a step's authored text for the same step's text in the run's language.

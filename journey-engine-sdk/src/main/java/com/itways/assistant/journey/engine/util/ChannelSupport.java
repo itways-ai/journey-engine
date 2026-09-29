@@ -1,8 +1,7 @@
 package com.itways.assistant.journey.engine.util;
 
-import java.util.Map;
-
 import com.itways.assistant.journey.model.catalog.StepDefinition;
+import java.util.Map;
 
 /**
  * How well each step type works on each kind of channel — the console's
@@ -18,52 +17,52 @@ import com.itways.assistant.journey.model.catalog.StepDefinition;
  */
 public final class ChannelSupport {
 
-	public static final String VOICE = "voice";
+    public static final String VOICE = "voice";
 
-	public static final String NATIVE = "NATIVE";
-	public static final String ADAPTED = "ADAPTED";
-	public static final String UNSUPPORTED = "UNSUPPORTED";
+    public static final String NATIVE = "NATIVE";
+    public static final String ADAPTED = "ADAPTED";
+    public static final String UNSUPPORTED = "UNSUPPORTED";
 
-	private static final Map<String, String> VOICE_SUPPORT = Map.ofEntries(
-			Map.entry("RESPONSE", NATIVE),
-			Map.entry("CONDITION", NATIVE),
-			Map.entry("SWITCH", NATIVE),
-			Map.entry("JUMP", NATIVE),
-			Map.entry("API_CALL", NATIVE),
-			Map.entry("DATA_MAP", NATIVE),
-			Map.entry("CODE_SCRIPT", NATIVE),
-			Map.entry("KNOWLEDGE_RETRIEVAL", NATIVE),
-			Map.entry("SEND_MAIL", NATIVE),
-			Map.entry("TRIGGER_JOURNEY", NATIVE),
-			Map.entry("STATE_STORE", NATIVE),
-			Map.entry("TEMPLATE_RENDER", NATIVE),
-			// A multi-field form is asked one field at a time; a file field cannot be.
-			Map.entry("USER_INPUT", ADAPTED),
-			// Self-confirmation is a spoken yes/no; a stakeholder gate ends the call.
-			Map.entry("HUMAN_APPROVAL", ADAPTED),
-			// The call is transferred to the channel's handoff number.
-			Map.entry("HANDOFF", ADAPTED),
-			// The link is texted to the caller.
-			Map.entry("REDIRECT", ADAPTED),
-			// Short waits are held on the line; long ones park the run.
-			Map.entry("DELAY", ADAPTED),
-			// Needs a document nobody can hand over on a call.
-			Map.entry("DOCUMENT_INSIGHT", UNSUPPORTED));
+    private static final Map<String, String> VOICE_SUPPORT = Map.ofEntries(
+            Map.entry("RESPONSE", NATIVE),
+            Map.entry("CONDITION", NATIVE),
+            Map.entry("SWITCH", NATIVE),
+            Map.entry("JUMP", NATIVE),
+            Map.entry("API_CALL", NATIVE),
+            Map.entry("DATA_MAP", NATIVE),
+            Map.entry("CODE_SCRIPT", NATIVE),
+            Map.entry("KNOWLEDGE_RETRIEVAL", NATIVE),
+            Map.entry("SEND_MAIL", NATIVE),
+            Map.entry("TRIGGER_JOURNEY", NATIVE),
+            Map.entry("STATE_STORE", NATIVE),
+            Map.entry("TEMPLATE_RENDER", NATIVE),
+            // A multi-field form is asked one field at a time; a file field cannot be.
+            Map.entry("USER_INPUT", ADAPTED),
+            // Self-confirmation is a spoken yes/no; a stakeholder gate ends the call.
+            Map.entry("HUMAN_APPROVAL", ADAPTED),
+            // The call is transferred to the channel's handoff number.
+            Map.entry("HANDOFF", ADAPTED),
+            // The link is texted to the caller.
+            Map.entry("REDIRECT", ADAPTED),
+            // Short waits are held on the line; long ones park the run.
+            Map.entry("DELAY", ADAPTED),
+            // Needs a document nobody can hand over on a call.
+            Map.entry("DOCUMENT_INSIGHT", UNSUPPORTED));
 
-	private ChannelSupport() {
-	}
+    private ChannelSupport() {
+    }
 
-	/** Voice support for a step type; a type this table has never heard of is NATIVE. */
-	public static String voice(String stepType) {
-		return VOICE_SUPPORT.getOrDefault(stepType, NATIVE);
-	}
+    /** Voice support for a step type; a type this table has never heard of is NATIVE. */
+    public static String voice(String stepType) {
+        return VOICE_SUPPORT.getOrDefault(stepType, NATIVE);
+    }
 
-	/** Fills {@code channels} on a definition the handler described. */
-	public static StepDefinition annotate(StepDefinition definition) {
-		if (definition == null) {
-			return null;
-		}
-		definition.setChannels(Map.of(VOICE, voice(definition.getType())));
-		return definition;
-	}
+    /** Fills {@code channels} on a definition the handler described. */
+    public static StepDefinition annotate(StepDefinition definition) {
+        if (definition == null) {
+            return null;
+        }
+        definition.setChannels(Map.of(VOICE, voice(definition.getType())));
+        return definition;
+    }
 }

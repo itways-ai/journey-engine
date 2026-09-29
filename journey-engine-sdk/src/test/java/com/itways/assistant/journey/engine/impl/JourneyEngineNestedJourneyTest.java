@@ -5,20 +5,18 @@ import static com.itways.assistant.journey.engine.impl.EngineFixture.step;
 import static com.itways.assistant.journey.engine.impl.EngineFixture.trace;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.itways.assistant.journey.engine.handler.TriggerJourneyStepHandler;
+import com.itways.assistant.journey.engine.service.JourneyLookupPort;
+import com.itways.assistant.journey.model.JourneyDefinition;
+import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.RunHistoryEvent;
+import com.itways.assistant.journey.model.RunStatus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
-
-import com.itways.assistant.journey.engine.handler.TriggerJourneyStepHandler;
-import com.itways.assistant.journey.model.RunHistoryEvent;
-import com.itways.assistant.journey.engine.service.JourneyLookupPort;
-import com.itways.assistant.journey.model.JourneyDefinition;
-import com.itways.assistant.journey.model.JourneyStep;
-import com.itways.assistant.journey.model.RunStatus;
 
 /**
  * TRIGGER_JOURNEY through the real engine: the child runs as its own execution

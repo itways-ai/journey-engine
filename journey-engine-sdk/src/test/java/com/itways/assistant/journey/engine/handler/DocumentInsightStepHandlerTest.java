@@ -7,14 +7,12 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.output
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * DOCUMENT_INSIGHT, as it stands: a placeholder that returns a fixed result

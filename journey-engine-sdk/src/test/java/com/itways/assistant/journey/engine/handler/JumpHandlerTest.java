@@ -4,11 +4,10 @@ import static com.itways.assistant.journey.engine.handler.HandlerFixtures.SCHEMA
 import static com.itways.assistant.journey.engine.handler.HandlerFixtures.run;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
-
 import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.StepStatus;
+import org.junit.jupiter.api.Test;
 
 /** JUMP only names its target; the engine does the moving (see JourneyEngineFlowTest). */
 class JumpHandlerTest {

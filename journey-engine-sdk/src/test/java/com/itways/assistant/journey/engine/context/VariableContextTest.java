@@ -2,12 +2,10 @@ package com.itways.assistant.journey.engine.context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.itways.assistant.journey.engine.model.ExecutionContext;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-
-import com.itways.assistant.journey.engine.model.ExecutionContext;
 
 class VariableContextTest {
 

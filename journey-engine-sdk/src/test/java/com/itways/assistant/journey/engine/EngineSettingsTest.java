@@ -2,6 +2,12 @@ package com.itways.assistant.journey.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.itways.assistant.journey.engine.handler.ApiCallStepHandler;
+import com.itways.assistant.journey.engine.handler.CodeScriptStepHandler;
+import com.itways.assistant.journey.engine.handler.DataMapStepHandler;
+import com.itways.assistant.journey.engine.handler.KnowledgeRetrievalStepHandler;
+import com.itways.assistant.journey.engine.handler.UserInputStepHandler;
+import com.itways.assistant.journey.engine.util.EgressGuard;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -9,16 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-
-import com.itways.assistant.journey.engine.handler.ApiCallStepHandler;
-import com.itways.assistant.journey.engine.handler.CodeScriptStepHandler;
-import com.itways.assistant.journey.engine.handler.DataMapStepHandler;
-import com.itways.assistant.journey.engine.handler.KnowledgeRetrievalStepHandler;
-import com.itways.assistant.journey.engine.handler.UserInputStepHandler;
-import com.itways.assistant.journey.engine.util.EgressGuard;
 
 /**
  * Pins every setting the engine reads, with its default (1.0.19: the keys moved

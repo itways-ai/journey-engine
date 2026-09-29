@@ -1,7 +1,6 @@
 package com.itways.assistant.journey.engine.language;
 
 import java.util.Locale;
-
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**

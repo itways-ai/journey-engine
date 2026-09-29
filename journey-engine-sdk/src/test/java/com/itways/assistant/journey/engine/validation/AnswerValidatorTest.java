@@ -3,14 +3,12 @@ package com.itways.assistant.journey.engine.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import com.itways.assistant.journey.engine.validation.AnswerValidator.FieldError;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
-
-import com.itways.assistant.journey.engine.validation.AnswerValidator.FieldError;
 
 class AnswerValidatorTest {
 

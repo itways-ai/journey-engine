@@ -4,15 +4,13 @@ import static com.itways.assistant.journey.engine.impl.EngineFixture.journey;
 import static com.itways.assistant.journey.engine.impl.EngineFixture.step;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.itways.assistant.journey.model.JourneyDefinition;
 import com.itways.assistant.journey.model.RunHistoryEvent;
 import com.itways.assistant.journey.model.RunStatus;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /**
  * The lifecycle event a port receives is what run history stores: the run's

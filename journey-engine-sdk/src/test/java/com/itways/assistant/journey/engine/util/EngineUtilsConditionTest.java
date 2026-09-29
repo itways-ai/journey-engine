@@ -2,11 +2,9 @@ package com.itways.assistant.journey.engine.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 class EngineUtilsConditionTest {
 

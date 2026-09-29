@@ -2,7 +2,6 @@ package com.itways.assistant.journey.engine.util;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import org.apache.hc.client5.http.DnsResolver;
 
 /**
@@ -23,25 +22,25 @@ import org.apache.hc.client5.http.DnsResolver;
  */
 public final class EgressDnsResolver implements DnsResolver {
 
-	private final EgressGuard guard;
+    private final EgressGuard guard;
 
-	public EgressDnsResolver(EgressGuard guard) {
-		this.guard = guard;
-	}
+    public EgressDnsResolver(EgressGuard guard) {
+        this.guard = guard;
+    }
 
-	/**
-	 * @throws EgressGuard.RefusedHostException when the host has a private or
-	 *                                          internal address and is not
-	 *                                          allow-listed
-	 */
-	@Override
-	public InetAddress[] resolve(String host) throws UnknownHostException {
-		return guard.addressesFor(host);
-	}
+    /**
+     * @throws EgressGuard.RefusedHostException when the host has a private or
+     *                                          internal address and is not
+     *                                          allow-listed
+     */
+    @Override
+    public InetAddress[] resolve(String host) throws UnknownHostException {
+        return guard.addressesFor(host);
+    }
 
-	@Override
-	public String resolveCanonicalHostname(String host) {
-		// Only asked for by authentication schemes (SPNEGO/Kerberos) these calls never use.
-		return host;
-	}
+    @Override
+    public String resolveCanonicalHostname(String host) {
+        // Only asked for by authentication schemes (SPNEGO/Kerberos) these calls never use.
+        return host;
+    }
 }

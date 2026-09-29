@@ -1,8 +1,7 @@
 package com.itways.assistant.journey.model;
 
-import java.time.Instant;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Instant;
 
 /**
  * One executed step, as run history stores it.

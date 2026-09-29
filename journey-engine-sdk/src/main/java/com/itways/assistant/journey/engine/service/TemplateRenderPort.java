@@ -1,7 +1,6 @@
 package com.itways.assistant.journey.engine.service;
 
 import com.itways.assistant.journey.engine.model.TemplateRenderResult;
-
 import java.util.Map;
 
 /**

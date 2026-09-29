@@ -1,7 +1,6 @@
 package com.itways.assistant.journey.engine.service;
 
 import com.itways.assistant.journey.model.EngineSearchResult;
-
 import java.util.List;
 import java.util.UUID;
 

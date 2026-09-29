@@ -1,10 +1,10 @@
 package com.itways.assistant.journey.engine.service;
 
 import com.itways.assistant.journey.engine.model.ExecutionContext;
+import com.itways.assistant.journey.engine.model.StepResult;
 import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.model.catalog.StepOutputSchema;
-import com.itways.assistant.journey.engine.model.StepResult;
 
 public interface StepHandler {
     /**

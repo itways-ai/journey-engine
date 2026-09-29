@@ -1,36 +1,35 @@
 package com.itways.assistant.journey.engine.impl;
 
-import com.itways.assistant.journey.model.RunStepLog;
-import com.itways.assistant.journey.model.RunHistoryEvent;
-import com.itways.assistant.journey.model.RunStatus;
-import com.itways.assistant.journey.model.StepStatus;
-import com.itways.assistant.journey.model.ExecutionStatus;
-import com.itways.assistant.journey.model.JourneyDefinition;
-import com.itways.assistant.journey.model.JourneyStep;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.context.EndUserAuth;
-import com.itways.assistant.journey.engine.language.EngineMessages;
-import com.itways.assistant.journey.engine.language.StepLocalizer;
-import com.itways.assistant.journey.model.StepText;
-import com.itways.assistant.journey.engine.language.LanguageParams;
 import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.handler.TriggerJourneyStepHandler;
+import com.itways.assistant.journey.engine.language.EngineMessages;
+import com.itways.assistant.journey.engine.language.LanguageParams;
+import com.itways.assistant.journey.engine.language.StepLocalizer;
 import com.itways.assistant.journey.engine.model.*;
 import com.itways.assistant.journey.engine.service.JourneyEngine;
 import com.itways.assistant.journey.engine.service.JourneyRunLifecyclePort;
 import com.itways.assistant.journey.engine.service.StepHandler;
-import com.itways.assistant.journey.engine.service.StepObserver;
 import com.itways.assistant.journey.engine.service.StepHandlerRegistry;
+import com.itways.assistant.journey.engine.service.StepObserver;
 import com.itways.assistant.journey.engine.util.EngineUtils;
-import com.itways.assistant.journey.model.JourneyStepGraph;
 import com.itways.assistant.journey.engine.util.VariableDiagnostics;
 import com.itways.assistant.journey.engine.util.VariablePath;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import com.itways.assistant.journey.model.ExecutionStatus;
+import com.itways.assistant.journey.model.JourneyDefinition;
+import com.itways.assistant.journey.model.JourneyStep;
+import com.itways.assistant.journey.model.JourneyStepGraph;
+import com.itways.assistant.journey.model.RunHistoryEvent;
+import com.itways.assistant.journey.model.RunStatus;
+import com.itways.assistant.journey.model.RunStepLog;
+import com.itways.assistant.journey.model.StepStatus;
+import com.itways.assistant.journey.model.StepText;
 import java.time.Instant;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service

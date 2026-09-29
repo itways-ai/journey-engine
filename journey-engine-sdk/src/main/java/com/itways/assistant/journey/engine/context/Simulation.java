@@ -1,8 +1,7 @@
 package com.itways.assistant.journey.engine.context;
 
-import java.util.Map;
-
 import com.itways.assistant.journey.engine.model.ExecutionContext;
+import java.util.Map;
 
 /**
  * Marks a run as a rehearsal: real logic, no consequences.

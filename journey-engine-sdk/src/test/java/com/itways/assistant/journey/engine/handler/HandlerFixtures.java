@@ -1,8 +1,5 @@
 package com.itways.assistant.journey.engine.handler;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.journey.engine.context.VariableContext;
 import com.itways.assistant.journey.engine.language.DecisionWords;
@@ -11,6 +8,8 @@ import com.itways.assistant.journey.engine.model.ExecutionContext;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.engine.util.StepOutputSchemaHelper;
 import com.itways.assistant.journey.model.ExecutionStatus;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The collaborators every handler test needs, built by hand: no Spring context,

@@ -1,12 +1,11 @@
 package com.itways.assistant.journey.engine.model;
 
 import com.itways.assistant.journey.model.StepStatus;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
 
 @Data
 @Builder

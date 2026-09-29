@@ -2,14 +2,6 @@ package com.itways.assistant.journey.engine.handler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.ai.service.impl.LocalEmbeddingEngine;
 import com.itways.assistant.journey.engine.context.VariableContext;
@@ -21,6 +13,12 @@ import com.itways.assistant.journey.engine.service.TextTranslator;
 import com.itways.assistant.journey.engine.util.EngineUtils;
 import com.itways.assistant.journey.model.EngineSearchResult;
 import com.itways.assistant.journey.model.JourneyStep;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
 
 /**
  * A knowledge step searches in the run's assistant scope: the index name means
