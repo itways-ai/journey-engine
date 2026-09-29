@@ -16,84 +16,31 @@
 
         journey-service needs the first and must not pull in the second (GraalVM,
         FreeMarker, the AI SDK), which is why they are separate jars.
+
+        The platform parent sets Java 21, manages the versions (Spring Boot 3.2.2,
+        the in-house libraries through platform-bom) and runs JaCoCo, surefire and
+        the sources jar in both modules. These are libraries: no
+        spring-boot-maven-plugin.
     -->
+    <parent>
+        <groupId>com.itways</groupId>
+        <artifactId>platform-parent</artifactId>
+        <version>2.0.0</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Explicit: platform-bom names the modules with this groupId and version. -->
     <groupId>com.itways.assistant</groupId>
     <artifactId>journey-engine-parent</artifactId>
     <version>1.0.18</version>
     <packaging>pom</packaging>
+
+    <name>journey-engine-parent</name>
+    <description>The journey model and the journey engine SDK, released together at one version</description>
 
     <modules>
         <module>journey-model</module>
         <module>journey-engine-sdk</module>
     </modules>
 
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <lombok.version>1.18.30</lombok.version>
-        <jackson.version>2.15.3</jackson.version>
-        <junit.version>5.10.1</junit.version>
-        <assertj.version>3.24.2</assertj.version>
-    </properties>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
-                    <configuration>
-                        <source>21</source>
-                        <target>21</target>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.3.0</version>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals><goal>jar</goal></goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <!--
-                    Without this, Maven falls back to the super-POM's surefire
-                    2.12.4, which predates JUnit 5: the tests compile, "Tests run: 0"
-                    is reported, and the build goes green having executed nothing.
-                    The Spring Boot services inherit a modern surefire from their
-                    parent; these libraries have no Spring parent.
-                -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.2.5</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>

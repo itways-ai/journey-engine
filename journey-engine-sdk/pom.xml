@@ -13,7 +13,6 @@
     <artifactId>journey-engine-sdk</artifactId>
 
     <properties>
-        <spring-boot.version>3.2.0</spring-boot.version>
         <graalvm.js.version>24.1.2</graalvm.js.version>
     </properties>
 
@@ -26,44 +25,36 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
-            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-freemarker</artifactId>
-			 <version>${spring-boot.version}</version>
 		</dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
-		<dependency>
-			<groupId>com.itways.assistant</groupId>
-			<artifactId>ai-engine-sdk</artifactId>
-			<version>1.1.0</version>
-		</dependency>
+        <!-- Version from platform-bom. -->
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>ai-engine-sdk</artifactId>
+        </dependency>
         <!-- API_CALL steps dial only the addresses EgressGuard vetted, through
-             the connection manager's DnsResolver (DNS rebinding). Already on the
-             classpath through ai-engine-sdk at this version; declared because
-             the engine now uses it directly. Services with a Spring Boot parent
-             (speech-service) get Boot's managed version. -->
+             the connection manager's DnsResolver (DNS rebinding). Declared because
+             the engine uses it directly; version managed by Spring Boot. -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
@@ -82,13 +73,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

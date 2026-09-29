@@ -159,22 +159,18 @@ Other settings: `nibras.journey.script.statement-limit` (500000),
 
 ## Build
 
-The build needs Java 21. A newer host JDK breaks Lombok, so build in a
-container. `journey-engine-sdk` depends on `com.itways.assistant:ai-engine-sdk`,
-so install that into the same local Maven repository first.
+The parent is `com.itways:platform-parent` 2.0.0 (from `common-lib`). It sets
+Java 21, manages the versions (Spring Boot 3.2.2; `ai-engine-sdk` through
+`platform-bom`) and runs JaCoCo, surefire and the sources
+jar. Only GraalVM JS (`graalvm.js.version`) carries its own version.
+
+Build with JDK 21 (a newer JDK breaks Lombok), after installing `common-lib`
+and `ai-engine-sdk` into the same local Maven repository:
 
 ```sh
-# from ai-engine-sdk/
-mvn install
-# from journey-engine/
-mvn clean install
-```
-
-In a container, with a shared local repository:
-
-```sh
-docker run --rm -v "$PWD":/src -v "$HOME/.m2":/m2 -w /src \
-  maven:3.9-eclipse-temurin-21 mvn -B -Dmaven.repo.local=/m2 clean install
+mvn -f ../common-lib/pom.xml install -DskipTests
+mvn -f ../ai-engine-sdk/pom.xml install -DskipTests
+JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn clean install
 ```
 
 ## Tests
