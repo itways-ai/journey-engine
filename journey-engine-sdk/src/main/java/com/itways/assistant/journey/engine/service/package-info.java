@@ -6,7 +6,9 @@
  * optionally with a {@link StepObserver} for streaming) and
  * {@link StepOutputRegistry} (the step catalogue for the builder).
  * <li>Implemented by the host: the six ports {@link JourneyLookupPort},
- * {@link JourneyRunLifecyclePort}, {@link KnowledgeBasePort},
+ * {@link JourneyRunLifecyclePort}, {@link KnowledgeBasePort} (with its
+ * {@link KnowledgeQuery} and {@link KnowledgeMiss}, and which throws
+ * {@link KnowledgeIndexMissingException} for an index that does not exist),
  * {@link MailDeliveryPort}, {@link StepTextPort} and {@link TemplateRenderPort}
  * (which throws {@link TemplateRenderBusyException} when the renderer is busy),
  * plus {@link AiConfigProvider} and {@link TextTranslator}.
