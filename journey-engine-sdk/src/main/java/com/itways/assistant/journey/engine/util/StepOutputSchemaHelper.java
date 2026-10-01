@@ -123,12 +123,20 @@ public class StepOutputSchemaHelper {
                 .build();
     }
 
+    /**
+     * KNOWLEDGE_RETRIEVAL publishes the answer, whether one was found, the
+     * passages it was served from ({@code sources}: one citation object per
+     * passage, best first; empty on a miss) and whether several were composed
+     * into one answer.
+     */
     public StepOutputSchema knowledgeRetrievalSchema() {
         return StepOutputSchema.builder()
                 .stepType("KNOWLEDGE_RETRIEVAL")
                 .fields(List.of(
                         OutputField.of("output", "Retrieved Answer", "string"),
-                        OutputField.of("found", "Knowledge Found", "boolean")))
+                        OutputField.of("found", "Knowledge Found", "boolean"),
+                        OutputField.of("sources", "Sources", "array"),
+                        OutputField.of("composed", "Answer Composed", "boolean")))
                 .build();
     }
 
@@ -231,8 +239,13 @@ public class StepOutputSchemaHelper {
         return genericDefinition("DELAY", "logic", "Delay", "hgi-clock-01", "step-delay");
     }
 
+    /**
+     * The knowledge step as the builder shows it: "Knowledge answer", the
+     * portal's name for it. Only the label changed (1.0.20); the type
+     * {@code KNOWLEDGE_RETRIEVAL} is stored in journeys and never renamed.
+     */
     public StepDefinition knowledgeDefinition() {
-        return genericDefinition("KNOWLEDGE_RETRIEVAL", "ai", "Knowledge Retrieval", "hgi-book-open-01", "step-knowledge");
+        return genericDefinition("KNOWLEDGE_RETRIEVAL", "ai", "Knowledge answer", "hgi-book-open-01", "step-knowledge");
     }
 
     public StepDefinition documentInsightDefinition() {

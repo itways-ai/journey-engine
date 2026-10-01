@@ -1,6 +1,8 @@
 package com.itways.assistant.journey.engine.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,9 +67,38 @@ public class ApiConfig {
 
     // Elite: Knowledge Retrieval
     private String query;
+    /** KNOWLEDGE_RETRIEVAL: the one index to search; used when {@link #indexNames} names none. */
     private String indexName;
+    /**
+     * KNOWLEDGE_RETRIEVAL: the indexes to search, merged into one answer. When it names
+     * at least one (non-blank) index it wins over {@link #indexName}; duplicates are
+     * searched once, in the order given. A single name behaves exactly as
+     * {@code indexName} does. Null or empty: {@code indexName}, as before. A single
+     * string is read as a one-name list rather than voiding the whole configuration.
+     */
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    private List<String> indexNames;
+    /** KNOWLEDGE_RETRIEVAL: at most this many hits, 1..20 (clamped); 5 when absent. */
     private Integer limit;
+    /**
+     * KNOWLEDGE_RETRIEVAL: the cosine similarity a hit needs to be served,
+     * 0.30..0.95 (clamped); 0.70 when absent. Honoured since 1.0.20.
+     */
     private Double threshold;
+    /**
+     * KNOWLEDGE_RETRIEVAL, when the step composes its answer: the similarity a
+     * passage needs to be shown to the model, 0.30..0.95 (clamped) and never above
+     * {@link #threshold}; 0.55 when absent. The model then decides which of the
+     * passages answer, and replies {@code NO_ANSWER} when none does. A step that
+     * answers with the single best entry ({@code SINGLE}) ignores it. Since 1.0.20.
+     */
+    private Double recallThreshold;
+    /**
+     * KNOWLEDGE_RETRIEVAL: 0..1 (clamped), how much the hits are spread over
+     * different passages (MMR, applied by journey-service); 0 keeps the relevance
+     * order. Absent leaves the default to journey-service (0.3). Since 1.0.20.
+     */
+    private Double diversity;
 
     /**
      * KNOWLEDGE_RETRIEVAL: how this step is allowed to answer.
@@ -88,6 +119,19 @@ public class ApiConfig {
      * one answer, while the clause underneath it must come back word for word.
      */
     private String answerMode;
+
+    /**
+     * KNOWLEDGE_RETRIEVAL: whether a miss is reported as a knowledge gap
+     * ({@code KnowledgeBasePort.recordMiss}). Null or true: reported, as before.
+     *
+     * <p>
+     * False on every knowledge step of a chain but the last (FAQ, then guides,
+     * then web pages): a question a later step can still answer is not a gap,
+     * and reporting it from each step that missed it fills the gaps queue with
+     * questions that were answered. The step's reply and outputs are the same
+     * either way; its metadata says {@code gapReported: false}.
+     */
+    private Boolean recordGaps;
 
     // Elite: Human Approval
     private String approvalMode; // SELF_CONFIRM | STAKEHOLDER

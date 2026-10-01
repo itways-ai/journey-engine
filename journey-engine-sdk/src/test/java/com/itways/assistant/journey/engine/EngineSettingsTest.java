@@ -40,8 +40,12 @@ class EngineSettingsTest {
                 "${journey.api-call.connect-timeout-ms:5000}",
                 "${journey.api-call.read-timeout-ms:30000}",
                 "${journey.data-map.context-budget-chars:8000}",
+                "${journey.knowledge.recall.arabic-offset:0}",
+                "${journey.knowledge.synthesis.abstention-phrases:true}",
                 "${journey.knowledge.synthesis.enabled:true}",
-                "${journey.knowledge.synthesis.max-chunks:3}",
+                "${journey.knowledge.synthesis.max-chunks:8}",
+                "${journey.knowledge.synthesis.sure-match-threshold:0.85}",
+                "${journey.knowledge.synthesis.vector-first:4}",
                 "${journey.script.statement-limit:500000}",
                 "${journey.script.timeout-seconds:10}",
                 "${journey.user-input.max-attempts:3}");
