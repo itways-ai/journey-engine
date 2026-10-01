@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.19</version>
+        <version>1.0.20</version>
     </parent>
 
     <artifactId>journey-engine-sdk</artifactId>

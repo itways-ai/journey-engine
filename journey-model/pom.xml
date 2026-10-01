@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.19</version>
+        <version>1.0.20</version>
     </parent>
 
     <artifactId>journey-model</artifactId>
@@ -28,6 +28,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- EngineSearchResultJsonTest: the wire shape old and new journey-services send. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

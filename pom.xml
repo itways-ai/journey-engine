@@ -25,14 +25,14 @@
     <parent>
         <groupId>com.itways</groupId>
         <artifactId>platform-parent</artifactId>
-        <version>2.1.0</version>
+        <version>2.2.0</version>
         <relativePath/>
     </parent>
 
     <!-- Explicit: platform-bom names the modules with this groupId and version. -->
     <groupId>com.itways.assistant</groupId>
     <artifactId>journey-engine-parent</artifactId>
-    <version>1.0.19</version>
+    <version>1.0.20</version>
     <packaging>pom</packaging>
 
     <name>journey-engine-parent</name>
