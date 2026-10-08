@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * One configured connector as the engine receives it for one call: the
- * pinned descriptor version, the base URL, the hosts it may dial, its
+ * One configured connector as the engine receives it for one call: its
+ * definition (the descriptor), the base URL, the hosts it may dial, its
  * configuration values and its secrets, opened.
  *
  * <p>
@@ -21,9 +21,8 @@ import java.util.UUID;
  *
  * @param id           the connector
  * @param name         its label, for logs and messages
- * @param typeKey      the connector type
- * @param typeVersion  the descriptor version this connector is pinned to
- * @param descriptor   that version's descriptor
+ * @param kind         the connector kind ({@code REST} or {@code MCP}); equals {@code descriptor.transport}
+ * @param descriptor   the connector's definition (edited in place; {@code lockVersion} tells versions apart)
  * @param baseUrl      the system's base URL ({@code https://...}, no query, no user info)
  * @param allowedHosts the hosts this connector may dial; null or empty means the base URL's host
  * @param config       the non-secret configuration values, by field name
@@ -34,8 +33,7 @@ import java.util.UUID;
 public record ResolvedConnector(
         UUID id,
         String name,
-        String typeKey,
-        Integer typeVersion,
+        String kind,
         ConnectorDescriptor descriptor,
         String baseUrl,
         List<String> allowedHosts,
@@ -55,7 +53,7 @@ public record ResolvedConnector(
         return allowedHosts != null ? allowedHosts : List.of();
     }
 
-    /** The operation with this key in the pinned descriptor. */
+    /** The operation with this key in the connector's definition. */
     public Optional<ConnectorOperation> operation(String operationKey) {
         return descriptor != null ? descriptor.operation(operationKey) : Optional.empty();
     }
@@ -79,8 +77,8 @@ public record ResolvedConnector(
     /** Field names only: a secret value must never end up in a log line by accident. */
     @Override
     public String toString() {
-        return "ResolvedConnector[id=" + id + ", name=" + name + ", typeKey=" + typeKey + ", typeVersion="
-                + typeVersion + ", baseUrl=" + baseUrl + ", allowedHosts=" + allowedHostsOrEmpty()
+        return "ResolvedConnector[id=" + id + ", name=" + name + ", kind=" + kind
+                + ", baseUrl=" + baseUrl + ", allowedHosts=" + allowedHostsOrEmpty()
                 + ", configFields=" + configOrEmpty().keySet() + ", secretFields=" + secretsOrEmpty().keySet()
                 + ", lockVersion=" + lockVersion + "]";
     }

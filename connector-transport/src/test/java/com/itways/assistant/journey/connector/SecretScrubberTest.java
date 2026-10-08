@@ -3,6 +3,7 @@ package com.itways.assistant.journey.connector;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /** What the scrubber takes out of a message before it is stored or shown. */
@@ -34,6 +35,41 @@ class SecretScrubberTest {
                 .isEqualTo("Basic " + MASK + " rejected");
         String jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYmMifQ.c2lnbmF0dXJlLXNpZ25hdHVyZQ";
         assertThat(SecretScrubber.scrub("token " + jwt + " expired", List.of())).isEqualTo("token " + MASK + " expired");
+    }
+
+    @Test
+    void masksAJwtByItsHeaderWhateverTheSegmentLengths() {
+        String shortSegments = "eyJhbGciOiJub25lIn0.e30.sig";
+        assertThat(SecretScrubber.scrub("got " + shortSegments + " back", List.of()))
+                .isEqualTo("got " + MASK + " back");
+    }
+
+    @Test
+    void anAcquiredAccessTokenIsScrubbedLikeASecretWhenItIsInTheSet() {
+        String token = "opaque-access-token-77";
+        assertThat(SecretScrubber.scrub("upstream said: token " + token + " is invalid", List.of("cs-1234", token)))
+                .isEqualTo("upstream said: token " + MASK + " is invalid");
+    }
+
+    @Test
+    void scrubDeepWalksMapsAndListsAndKeepsQueryStringsInBodies() {
+        Map<String, Object> body = Map.of("echo", Map.of("X-API-Key", "k-secret-1", "authorization", "Bearer tok-abc"),
+                "items", List.of("key k-secret-1 seen", 7, true), "next", "https://api.test/accounts?page=2",
+                "jwt", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYmMifQ.c2lnbmF0dXJlLXNpZ25hdHVyZQ");
+
+        Object out = SecretScrubber.scrubDeep(body, List.of("k-secret-1"));
+
+        assertThat(out).isInstanceOf(Map.class);
+        Map<?, ?> map = (Map<?, ?>) out;
+        assertThat(((Map<?, ?>) map.get("echo")).get("X-API-Key")).isEqualTo(MASK);
+        assertThat(((Map<?, ?>) map.get("echo")).get("authorization")).isEqualTo("Bearer " + MASK);
+        assertThat(map.get("items")).isEqualTo(List.of("key " + MASK + " seen", 7, true));
+        assertThat(map.get("next")).isEqualTo("https://api.test/accounts?page=2");
+        assertThat(map.get("jwt")).isEqualTo(MASK);
+        assertThat(out.toString()).doesNotContain("k-secret-1", "tok-abc");
+        assertThat(SecretScrubber.scrubDeep(null, List.of())).isNull();
+        assertThat(SecretScrubber.scrubDeep(42, List.of())).isEqualTo(42);
+        assertThat(SecretScrubber.scrubDeep("k-secret-1", List.of("k-secret-1"))).isEqualTo(MASK);
     }
 
     @Test

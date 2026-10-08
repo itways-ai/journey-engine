@@ -11,14 +11,14 @@
  * is one named tool of a remote server, with {@code ConnectorDescriptor.McpSettings}
  * for the protocol revision), its {@link AuthScheme}, configuration fields,
  * {@link ConnectorDefaults} and {@link ConnectorOperation}s, each with its
- * input and output {@link SchemaNode} and {@link RiskLevel}.
+ * input and output {@link SchemaNode} (and a legacy, ignored {@link RiskLevel}).
  * <li>{@link ConnectorDescriptorValidator}: the rules a descriptor must meet
  * before it is stored (unique keys; REST: every path parameter an input, no
  * secret in a path or query, writes that declare how replays are
  * de-duplicated; MCP: no method or path, inputs are tool arguments,
  * idempotency declared, a credential in a header only).
  * <li>{@link ResolvedConnector}: the connector as the engine receives it
- * per call: pinned descriptor version, base URL, allow-list, config values and
+ * per call: its definition (descriptor) and kind, base URL, allow-list, config values and
  * the opened secrets. Held in memory only; its {@code toString} never prints a
  * secret.
  * </ul>

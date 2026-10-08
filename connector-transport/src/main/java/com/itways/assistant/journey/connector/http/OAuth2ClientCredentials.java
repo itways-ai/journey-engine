@@ -11,7 +11,10 @@ import com.itways.assistant.journey.model.connector.ResolvedConnector;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -39,8 +42,10 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
  */
 public final class OAuth2ClientCredentials {
 
-    /** How long a token is trusted when the endpoint does not say. */
+    /** How long a token is trusted when the endpoint does not say, or says something that is not a number. */
     public static final long DEFAULT_EXPIRES_IN_SECONDS = 300;
+    /** The most an {@code expires_in} is believed: a token is re-fetched at least this often, whatever the endpoint says. */
+    public static final long MAX_EXPIRES_IN_SECONDS = Duration.ofDays(30).toSeconds();
     /** Refreshed this long before the endpoint's expiry so a token never dies mid-request. */
     public static final long EXPIRY_MARGIN_SECONDS = 60;
 
@@ -91,6 +96,31 @@ public final class OAuth2ClientCredentials {
         tokens.remove(cacheKey(connector));
     }
 
+    /**
+     * The token last acquired for {@code connector}, fresh or not, or null
+     * when none was. For scrubbing only: a system that echoes the bearer it
+     * was given (a 500 that prints the request, an error that quotes the
+     * header) must not get the token into a stored message.
+     */
+    public String cachedToken(ResolvedConnector connector) {
+        CachedToken cached = tokens.get(cacheKey(connector));
+        return cached != null ? cached.value() : null;
+    }
+
+    /**
+     * The values to scrub from anything said about {@code connector}: its
+     * secrets, plus the access token when one was acquired.
+     */
+    public Collection<String> scrubValues(ResolvedConnector connector) {
+        String token = cachedToken(connector);
+        if (token == null) {
+            return connector.secretsOrEmpty().values();
+        }
+        List<String> values = new ArrayList<>(connector.secretsOrEmpty().values());
+        values.add(token);
+        return values;
+    }
+
     private CachedToken fetch(ResolvedConnector connector, AuthScheme auth, Deadline deadline) {
         String clientId = AuthApplier.required(connector, auth.clientIdField(), "clientIdField");
         String clientSecret = AuthApplier.required(connector, auth.clientSecretField(), "clientSecretField");
@@ -128,7 +158,7 @@ public final class OAuth2ClientCredentials {
                     "token endpoint: " + reason(e), e.getCause());
         }
         if (raw.status() < 200 || raw.status() >= 300) {
-            String body = SecretScrubber.scrub(raw.text(), connector.secretsOrEmpty().values(), 300);
+            String body = SecretScrubber.scrub(raw.text(), scrubValues(connector), 300);
             throw new ConnectorException(ConnectorErrorCodes.AUTH_FAILED, raw.status() >= 500, raw.status(),
                     "token endpoint answered " + raw.status() + (body == null || body.isBlank() ? "" : ": " + body));
         }
@@ -148,19 +178,39 @@ public final class OAuth2ClientCredentials {
             throw new ConnectorException(ConnectorErrorCodes.AUTH_FAILED, false, raw.status(),
                     "token endpoint answered without an access_token");
         }
-        long expiresIn = DEFAULT_EXPIRES_IN_SECONDS;
-        Object declared = answer.get("expires_in");
+        long trustedFor = Math.max(0, expiresInSeconds(answer.get("expires_in")) - EXPIRY_MARGIN_SECONDS);
+        return new CachedToken(value, System.nanoTime() + Duration.ofSeconds(trustedFor).toNanos());
+    }
+
+    /**
+     * How long the endpoint says its token lives, as something this class can
+     * add to a clock: a number (or a numeric string, fractions dropped)
+     * clamped to {@code 0..}{@link #MAX_EXPIRES_IN_SECONDS};
+     * {@link #DEFAULT_EXPIRES_IN_SECONDS} when it is missing, not numeric or
+     * not a number at all (NaN). The endpoint is not trusted to pick the
+     * arithmetic: a huge, negative, fractional or non-numeric value never
+     * throws and never produces a token that is cached forever.
+     */
+    static long expiresInSeconds(Object declared) {
+        double seconds;
         if (declared instanceof Number number) {
-            expiresIn = number.longValue();
+            seconds = number.doubleValue();
         } else if (declared instanceof String text && !text.isBlank()) {
             try {
-                expiresIn = Long.parseLong(text.trim());
+                seconds = Double.parseDouble(text.trim());
             } catch (NumberFormatException e) {
-                expiresIn = DEFAULT_EXPIRES_IN_SECONDS;
+                return DEFAULT_EXPIRES_IN_SECONDS;
             }
+        } else {
+            return DEFAULT_EXPIRES_IN_SECONDS;
         }
-        long trustedFor = Math.max(0, expiresIn - EXPIRY_MARGIN_SECONDS);
-        return new CachedToken(value, System.nanoTime() + Duration.ofSeconds(trustedFor).toNanos());
+        if (Double.isNaN(seconds)) {
+            return DEFAULT_EXPIRES_IN_SECONDS;
+        }
+        if (seconds <= 0) {
+            return 0;
+        }
+        return seconds >= MAX_EXPIRES_IN_SECONDS ? MAX_EXPIRES_IN_SECONDS : (long) seconds;
     }
 
     /**

@@ -31,6 +31,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -197,6 +198,11 @@ public final class RestTransport implements ConnectorTransport, Closeable {
             throw ConnectorException.configInvalid("type declares no testable operation");
         }
         return call(connector, operation, Map.of(), CallOptions.single(budget));
+    }
+
+    @Override
+    public Collection<String> scrubValues(ResolvedConnector connector) {
+        return auth.scrubValues(connector);
     }
 
     /** Closes the HTTP client and its pooled connections; the token cache dies with the instance. */
@@ -373,7 +379,7 @@ public final class RestTransport implements ConnectorTransport, Closeable {
 
     private ConnectorException failure(Call call, ResponseReader.Raw raw) {
         int status = raw.status();
-        String scrubbedBody = SecretScrubber.scrub(raw.text(), call.connector().secretsOrEmpty().values(), 300);
+        String scrubbedBody = SecretScrubber.scrub(raw.text(), auth.scrubValues(call.connector()), 300);
         if (scrubbedBody != null && !scrubbedBody.isBlank()) {
             ConnectorLog.errorBody(call.connector(), call.operation(), status, scrubbedBody);
         }

@@ -765,6 +765,51 @@ class RestTransportTest {
         }
 
         @Test
+        void anUpstreamErrorThatEchoesTheAccessTokenIsScrubbed() {
+            String token = "opaque-access-token-77";
+            server.respond(r -> {
+                if (r.rawPath().equals("/oauth/acme/token")) {
+                    return Reply.json(200, "{\"access_token\":\"" + token + "\",\"expires_in\":3600}");
+                }
+                // A 500 that prints the request it could not handle, bearer and all, plus the bare token.
+                return Reply.json(500, "{\"error\":\"boom\",\"request\":{\"authorization\":\""
+                        + r.header("Authorization") + "\"},\"token\":\"" + token + "\"}");
+            });
+
+            ConnectorException e = failure(() -> transport.call(oauthBank(), PING, Map.of(), once()));
+
+            assertThat(e.code()).isEqualTo(ConnectorErrorCodes.UNAVAILABLE);
+            assertThat(e.status()).isEqualTo(500);
+            assertThat(e.getMessage()).startsWith("GET ping answered 500").doesNotContain(token);
+            assertThat(logText()).doesNotContain(token);
+            assertThat(transport.scrubValues(oauthBank())).contains(token, CLIENT_SECRET);
+        }
+
+        @Test
+        void aTokenEndpointThatCannotBeTrustedWithArithmeticStillYieldsAToken() {
+            for (String expiresIn : List.of("9223372036854775807", "-1", "\"soon\"", "300.5", "1e400", "null",
+                    "true", "\"\"")) {
+                tokenRequests.set(0);
+                server.respond(r -> {
+                    if (r.rawPath().equals("/oauth/acme/token")) {
+                        tokenRequests.incrementAndGet();
+                        return Reply.json(200, "{\"access_token\":\"tok-1\",\"expires_in\":" + expiresIn + "}");
+                    }
+                    return Reply.json(200, "{\"status\":\"ok\"}");
+                });
+                // A fresh connector per value: the cache key is the connector id and version.
+                RestTransport fresh = transport(localPolicy());
+                try {
+                    CallResult result = fresh.call(oauthBank(), PING, Map.of(), once());
+                    assertThat(result.status()).as("expires_in=" + expiresIn).isEqualTo(200);
+                    assertThat(tokenRequests).as("expires_in=" + expiresIn).hasValue(1);
+                } finally {
+                    fresh.close();
+                }
+            }
+        }
+
+        @Test
         void aTokenUrlPlaceholderMayNotNameASecret() {
             AuthScheme oauth = new AuthScheme(AuthScheme.SCHEME_OAUTH2_CLIENT_CREDENTIALS, null, null, null, null,
                     null, server.baseUrl() + "/oauth/{clientSecret}/token", "clientId", "clientSecret", null);

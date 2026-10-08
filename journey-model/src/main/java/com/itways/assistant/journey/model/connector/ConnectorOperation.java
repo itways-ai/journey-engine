@@ -23,14 +23,14 @@ import java.util.Map;
  * property is a tool argument. MCP has no idempotency header, so a write that
  * can take the key as an argument names it in {@code idempotencyArgument};
  * {@code idempotent} must be declared explicitly (a discovered tool starts as
- * {@code false}, HIGH risk, until an admin says otherwise).
+ * {@code false} until an admin says otherwise).
  *
  * @param key                 stable identifier, unique within the type
  * @param name                label for the builder
  * @param nameAr              Arabic label
  * @param method              REST: {@code GET}, {@code POST}, {@code PUT}, {@code PATCH}, {@code DELETE}
  * @param path                REST: path template under the base URL
- * @param riskLevel           how much harm it can do
+ * @param riskLevel           legacy and ignored ({@link RiskLevel}): kept as stored, optional, never required
  * @param idempotent          whether repeating the call is safe; the only operations the engine retries
  * @param idempotencyHeader   REST: the header the key is sent in, when this operation has its own
  * @param input               the input schema (an object)
@@ -129,6 +129,7 @@ public record ConnectorOperation(
         return errors != null ? errors : Map.of();
     }
 
+    /** Legacy: the stored {@link RiskLevel}, {@code LOW} when absent. Nothing gates on it. */
     public RiskLevel riskLevelOrLow() {
         return riskLevel != null ? riskLevel : RiskLevel.LOW;
     }

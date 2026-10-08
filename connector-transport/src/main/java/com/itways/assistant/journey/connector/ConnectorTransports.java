@@ -17,7 +17,7 @@ import java.util.Set;
  * serves (1.2.0): {@code REST} → {@code RestTransport}, {@code MCP} →
  * {@code McpTransport}. The engine's CONNECTOR_CALL step and
  * journey-service's Test and Try endpoints pick the transport for a
- * connector here, from its pinned descriptor, so neither has to know the
+ * connector here, from its descriptor (the connector's definition), so neither has to know the
  * kinds. A descriptor whose transport no one serves is a configuration problem
  * ({@link ConnectorErrorCodes#CONFIG_INVALID}), never a guess.
  *
@@ -85,7 +85,7 @@ public final class ConnectorTransports implements Closeable {
                 + (kind == null ? "" : kind) + "' is not served by this host (available: " + kinds() + ")"));
     }
 
-    /** The transport for {@code connector}'s pinned descriptor ({@link #require(ConnectorDescriptor)}). */
+    /** The transport for {@code connector}'s descriptor ({@link #require(ConnectorDescriptor)}). */
     public ConnectorTransport require(ResolvedConnector connector) {
         Objects.requireNonNull(connector, "connector");
         return require(connector.descriptor());

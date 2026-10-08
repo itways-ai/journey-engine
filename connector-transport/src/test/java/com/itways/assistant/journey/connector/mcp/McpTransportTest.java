@@ -128,7 +128,7 @@ class McpTransportTest {
 
     private static ResolvedConnector connector(ConnectorDescriptor descriptor, String baseUrl,
             Map<String, String> secrets) {
-        return new ResolvedConnector(CRM, "Mock CRM (test)", descriptor.key(), descriptor.descriptorVersion(),
+        return new ResolvedConnector(CRM, "Mock CRM (test)", descriptor.transport(),
                 descriptor, baseUrl, null, Map.of(), secrets, 3L);
     }
 
@@ -710,7 +710,7 @@ class McpTransportTest {
             ConnectorDescriptor withOauth = new ConnectorDescriptor("mock-crm-mcp", "Mock CRM (MCP)", null,
                     ConnectorDescriptor.TRANSPORT_MCP, 1, oauth, fields, List.of(), null, null, null,
                     List.of(FIND_CONTACT), null);
-            ResolvedConnector connector = new ResolvedConnector(CRM, "CRM", "mock-crm-mcp", 1, withOauth,
+            ResolvedConnector connector = new ResolvedConnector(CRM, "CRM", "MCP", withOauth,
                     server.baseUrl() + "/mcp", null, Map.of("clientId", "cid"), Map.of("clientSecret", "cs-secret-1"),
                     1L);
             AtomicInteger tokens = new AtomicInteger();

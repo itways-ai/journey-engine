@@ -3,6 +3,7 @@ package com.itways.assistant.journey.connector;
 import com.itways.assistant.journey.model.connector.ConnectorOperation;
 import com.itways.assistant.journey.model.connector.ResolvedConnector;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,4 +50,15 @@ public interface ConnectorTransport {
      *                              type declares no testable operation
      */
     CallResult test(ResolvedConnector connector, Duration budget);
+
+    /**
+     * The values a caller must scrub from anything it stores or shows about
+     * {@code connector}: its secrets, plus whatever credential the transport
+     * acquired on its behalf (an OAuth2 access token). The transport scrubs
+     * its own messages with these; journey-service's Try uses them on an
+     * answer it shows whole.
+     */
+    default Collection<String> scrubValues(ResolvedConnector connector) {
+        return connector.secretsOrEmpty().values();
+    }
 }

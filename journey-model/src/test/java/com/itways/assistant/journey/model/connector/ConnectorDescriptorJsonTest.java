@@ -103,13 +103,29 @@ class ConnectorDescriptorJsonTest {
     }
 
     @Test
+    void riskLevelIsLegacyOptionalAndNeverFailsValidation() throws Exception {
+        String noRisk = MOCK_BANK.replace("\"riskLevel\": \"LOW\",", "");
+        String legacyRisk = MOCK_BANK.replace("\"riskLevel\": \"HIGH\"", "\"riskLevel\": \"CRITICAL\"")
+                .replace("/balance\", \"riskLevel\": \"LOW\"", "/balance\", \"riskLevel\": \"medium\"");
+
+        ConnectorDescriptor without = json.readValue(noRisk, ConnectorDescriptor.class);
+        ConnectorDescriptor legacy = json.readValue(legacyRisk, ConnectorDescriptor.class);
+
+        assertThat(without.operation("ping").orElseThrow().riskLevel()).isNull();
+        assertThat(ConnectorDescriptorValidator.problems(without)).isEmpty();
+        assertThat(legacy.operation("stopCard").orElseThrow().riskLevel()).isNull();
+        assertThat(legacy.operation("getAccountBalance").orElseThrow().riskLevel()).isEqualTo(RiskLevel.MEDIUM);
+        assertThat(ConnectorDescriptorValidator.problems(legacy)).isEmpty();
+    }
+
+    @Test
     void aResolvedConnectorPrintsFieldNamesNotSecrets() throws Exception {
         ConnectorDescriptor descriptor = json.readValue(MOCK_BANK, ConnectorDescriptor.class);
-        ResolvedConnector connector = new ResolvedConnector(UUID.randomUUID(), "Mock bank", descriptor.key(), 1,
+        ResolvedConnector connector = new ResolvedConnector(UUID.randomUUID(), "Mock bank", "REST",
                 descriptor, "https://bank.example/api", List.of(), Map.of("branchCode", "001"),
                 Map.of("apiKey", "sk-verysecret-1234"), 3L);
 
-        assertThat(connector.toString()).contains("secretFields=[apiKey]").contains("configFields=[branchCode]")
+        assertThat(connector.toString()).contains("kind=REST").contains("secretFields=[apiKey]").contains("configFields=[branchCode]")
                 .doesNotContain("sk-verysecret-1234");
         assertThat(connector.fieldValue("apiKey")).isEqualTo("sk-verysecret-1234");
         assertThat(connector.fieldValue("branchCode")).isEqualTo("001");
@@ -119,7 +135,7 @@ class ConnectorDescriptorJsonTest {
     @Test
     void aResolvedConnectorRoundTripsThroughJsonWithUnknownKeysIgnored() throws Exception {
         ConnectorDescriptor descriptor = json.readValue(MOCK_BANK, ConnectorDescriptor.class);
-        ResolvedConnector connector = new ResolvedConnector(UUID.randomUUID(), "Mock bank", descriptor.key(), 1,
+        ResolvedConnector connector = new ResolvedConnector(UUID.randomUUID(), "Mock bank", "REST",
                 descriptor, "https://bank.example", null, Map.of(), Map.of("apiKey", "k"), 1L);
 
         String written = json.writeValueAsString(connector).replaceFirst("\\{", "{\"later\":1,");
@@ -129,5 +145,37 @@ class ConnectorDescriptorJsonTest {
         assertThat(read.descriptor().operationsOrEmpty()).hasSize(3);
         assertThat(read.secretsOrEmpty()).containsEntry("apiKey", "k");
         assertThat(read.allowedHostsOrEmpty()).isEmpty();
+        assertThat(read.kind()).isEqualTo("REST");
+        assertThat(read.lockVersion()).isEqualTo(1L);
+    }
+
+    @Test
+    void aResolvedConnectorWritesTheWireShapeWithKindAndNoTypeFields() throws Exception {
+        ConnectorDescriptor descriptor = json.readValue(MOCK_BANK, ConnectorDescriptor.class);
+        ResolvedConnector connector = new ResolvedConnector(UUID.randomUUID(), "Mock bank", "REST",
+                descriptor, "https://bank.example", List.of("bank.example"), Map.of(), Map.of("apiKey", "k"), 4L);
+
+        com.fasterxml.jackson.databind.JsonNode tree = json.readTree(json.writeValueAsString(connector));
+
+        List<String> names = new java.util.ArrayList<>();
+        tree.fieldNames().forEachRemaining(names::add);
+        assertThat(names).containsExactlyInAnyOrder("id", "name", "kind", "descriptor", "baseUrl", "allowedHosts",
+                "config", "secrets", "lockVersion");
+        assertThat(tree.path("kind").asText()).isEqualTo("REST");
+        assertThat(tree.path("lockVersion").asLong()).isEqualTo(4L);
+    }
+
+    @Test
+    void aPre15ResolvePayloadWithTypeFieldsStillReadsButHasNoKind() throws Exception {
+        ConnectorDescriptor descriptor = json.readValue(MOCK_BANK, ConnectorDescriptor.class);
+        String legacy = "{\"id\":\"" + UUID.randomUUID() + "\",\"name\":\"Mock bank\","
+                + "\"typeKey\":\"mock-bank-rest\",\"typeVersion\":1,\"descriptor\":"
+                + json.writeValueAsString(descriptor) + ",\"baseUrl\":\"https://bank.example\",\"lockVersion\":2}";
+
+        ResolvedConnector read = json.readValue(legacy, ResolvedConnector.class);
+
+        assertThat(read.kind()).isNull();
+        assertThat(read.operation("getAccountBalance")).isPresent();
+        assertThat(read.lockVersion()).isEqualTo(2L);
     }
 }

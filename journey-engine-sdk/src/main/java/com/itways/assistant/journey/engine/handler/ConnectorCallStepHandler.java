@@ -74,7 +74,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConnectorCallStepHandler implements StepHandler {
 
-    /** The read timeout when neither the step, the operation nor the type says. */
+    /** The read timeout when neither the step, the operation nor the connector's defaults say. */
     static final int DEFAULT_READ_TIMEOUT_MS = (int) CallOptions.DEFAULT_READ_TIMEOUT.toMillis();
     /** The longest read timeout any of them may ask for. */
     static final int MAX_READ_TIMEOUT_MS = (int) CallOptions.MAX_READ_TIMEOUT.toMillis();
@@ -91,6 +91,7 @@ public class ConnectorCallStepHandler implements StepHandler {
     static final String MESSAGE_NOT_RESOLVABLE = "step.connector.notResolvable";
     static final String MESSAGE_CONFIG_INVALID = "step.connector.configInvalid";
     static final String MESSAGE_REJECTED = "step.connector.rejected";
+    static final String MESSAGE_OPERATION_UNKNOWN = "step.connector.operationUnknown";
 
     /** The longest diagnostic kept from an unexpected transport failure. */
     private static final int MAX_DIAGNOSTIC_LENGTH = 300;
@@ -225,9 +226,12 @@ public class ConnectorCallStepHandler implements StepHandler {
 
         Optional<ConnectorOperation> found = resolved.operation(config.operationKey());
         if (found.isEmpty()) {
-            return failure(context, config, ConnectorErrorCodes.CONFIG_INVALID, false, null,
-                    "CONNECTOR_CALL: operation '" + config.operationKey() + "' is not in type '"
-                            + resolved.typeKey() + "' version " + resolved.typeVersion());
+            // The definition is edited in place: an operation removed after the journey was published.
+            ConnectorException unknown = ConnectorException.operationUnknown(config.operationKey(), resolved.name());
+            log.warn("CONNECTOR_CALL step '{}' {} ({}): {}", step.getStepName(), resolved.id(), resolved.kind(),
+                    unknown.getMessage());
+            return failure(context, config, unknown.code(), unknown.retryable(), null,
+                    "CONNECTOR_CALL: " + unknown.getMessage());
         }
         ConnectorOperation operation = found.get();
 
@@ -279,7 +283,7 @@ public class ConnectorCallStepHandler implements StepHandler {
                     e.getClass().getName() + (diagnostic != null ? ": " + diagnostic : ""));
             logged.setStackTrace(e.getStackTrace());
             log.error("CONNECTOR_CALL step '{}' {} ({}) {}: unexpected transport failure", step.getStepName(),
-                    resolved.id(), resolved.typeKey(), operation.key(), logged);
+                    resolved.id(), resolved.kind(), operation.key(), logged);
             ConnectorException unavailable = new ConnectorException(ConnectorErrorCodes.UNAVAILABLE, true, null,
                     "unexpected transport failure (" + e.getClass().getSimpleName() + ")"
                             + (diagnostic != null && !diagnostic.isBlank() ? ": " + diagnostic : ""));
@@ -388,8 +392,8 @@ public class ConnectorCallStepHandler implements StepHandler {
      *
      * <ul>
      * <li>Read timeout: the step's {@code timeoutMs}, else the operation's, else
-     * the type's default, else 10 s; within 100 ms..30 s.</li>
-     * <li>Attempts: the step's {@code maxAttempts}, else the type's retry policy,
+     * the connector's default, else 10 s; within 100 ms..30 s.</li>
+     * <li>Attempts: the step's {@code maxAttempts}, else the connector's retry policy,
      * else 3; within 1..3. The transport repeats only what is safe to repeat.</li>
      * <li>Budget: 1.5 read timeouts for the whole step, retries included.</li>
      * <li>Idempotency key: only when the operation or its type declares where
@@ -487,6 +491,7 @@ public class ConnectorCallStepHandler implements StepHandler {
             case ConnectorErrorCodes.EGRESS_REFUSED -> MESSAGE_REFUSED;
             case ConnectorErrorCodes.NOT_RESOLVABLE -> MESSAGE_NOT_RESOLVABLE;
             case ConnectorErrorCodes.CONFIG_INVALID -> MESSAGE_CONFIG_INVALID;
+            case ConnectorErrorCodes.OPERATION_UNKNOWN -> MESSAGE_OPERATION_UNKNOWN;
             default -> MESSAGE_REJECTED;
         };
     }

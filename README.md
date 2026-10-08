@@ -289,7 +289,7 @@ beans:
 | `JourneyLookupPort` | yes | TRIGGER_JOURNEY | Finds a journey by trigger intent, or by pinned version id. |
 | `AiConfigProvider` | yes | DATA_MAP | The account's AI provider settings. |
 | `TextTranslator` | yes for KNOWLEDGE_RETRIEVAL, optional elsewhere | knowledge answers, step text | Machine translation into the run's language. `TextTranslator.NONE` never translates. |
-| `ConnectorPort` | yes for CONNECTOR_CALL | CONNECTOR_CALL | Resolves a configured connector (pinned descriptor, base URL, allow-list, opened secrets, kept in memory for the call only; cached at most 60 s by id and lockVersion, dropped on `invalidate`, which the step calls when the connector's breaker opens) and describes an operation for the variable picker. |
+| `ConnectorPort` | yes for CONNECTOR_CALL | CONNECTOR_CALL | Resolves a configured connector (its descriptor, base URL, allow-list, opened secrets, kept in memory for the call only; cached at most 60 s by id and lockVersion, dropped on `invalidate`, which the step calls when the connector's breaker opens) and describes an operation for the variable picker. |
 | `MailDeliveryPort` | optional | SEND_MAIL | Delivers mail. Without it, SEND_MAIL fails with "no mail transport". |
 | `JourneyRunLifecyclePort` | optional (any number) | engine | Persists run lifecycle events. Must be idempotent on `executionId`. |
 | `StepTextPort` | optional | step localization | Caches machine translations of step text. |
@@ -384,7 +384,8 @@ not used (the validator refuses them); `toolName` names the server's tool
 (the operation key when absent); every input property is a tool argument
 (`in` must be absent or `body`; `as` renames it on the wire); `idempotent`
 must be declared (`true` or `false` — a tool call is never assumed safe to
-repeat; discovered tools start as `false` and HIGH risk); a write that can take
+repeat; discovered tools start as `false` unless the server marks them
+read-only); a write that can take
 the key names the argument in `idempotencyArgument` (MCP has no idempotency
 header; `idempotencyHeader` and the type's `idempotency.header` are refused);
 `auth.scheme` is `none`, `apiKey` (`in: header` only), `bearer` or

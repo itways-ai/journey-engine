@@ -16,6 +16,7 @@ import com.itways.assistant.journey.model.connector.ResolvedConnector;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -197,6 +198,11 @@ final class McpProtocol {
         this.reader = reader;
         this.auth = auth;
         this.maxResponseBytes = maxResponseBytes;
+    }
+
+    /** The values to scrub from anything said about {@code connector}: its secrets and its access token. */
+    Collection<String> scrubValues(ResolvedConnector connector) {
+        return auth.scrubValues(connector);
     }
 
     static String cacheKey(ResolvedConnector connector) {
@@ -562,8 +568,7 @@ final class McpProtocol {
     ConnectorException failure(Target target, Exchange exchange, String method) {
         int status = exchange.status();
         String label = target.label() + " (" + method + ")";
-        String scrubbed = SecretScrubber.scrub(exchange.bodyText(), target.connector().secretsOrEmpty().values(),
-                300);
+        String scrubbed = SecretScrubber.scrub(exchange.bodyText(), auth.scrubValues(target.connector()), 300);
         if (scrubbed != null && !scrubbed.isBlank()) {
             McpLog.errorBody(target.connector(), method, status, scrubbed.strip());
         }
@@ -585,7 +590,7 @@ final class McpProtocol {
         if (error != null) {
             int code = error.path("code").asInt(0);
             String message = SecretScrubber.scrub(error.path("message").asText(""),
-                    target.connector().secretsOrEmpty().values(), 200);
+                    auth.scrubValues(target.connector()), 200);
             String detail = answered + " with JSON-RPC error " + code + (message.isBlank() ? "" : ": " + message);
             return switch (code) {
                 case METHOD_NOT_FOUND -> new ConnectorException(ConnectorErrorCodes.CONFIG_INVALID, false, status,

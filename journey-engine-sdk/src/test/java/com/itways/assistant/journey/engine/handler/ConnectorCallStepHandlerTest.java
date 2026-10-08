@@ -180,16 +180,33 @@ class ConnectorCallStepHandlerTest {
     }
 
     @Test
-    void unknownOperationIsAConfigError() {
+    void anOperationTheDefinitionNoLongerHasIsOperationUnknownAndNothingIsSent() {
         ExecutionContext context = run();
 
         StepResult result = handler.execute(step("{\"connectorId\":\"" + BANK + "\",\"operationKey\":\"closeAccount\"}"),
                 context);
 
         assertThat(result.getStatus()).isEqualTo(StepStatus.ERROR);
-        assertThat(result.getMessage()).contains("operation 'closeAccount' is not in type 'mock-bank-rest' version 2");
-        assertThat(result.getMetadata()).containsEntry(StepResult.META_ERROR_CODE, ConnectorErrorCodes.CONFIG_INVALID);
+        assertThat(result.getMessage())
+                .isEqualTo("CONNECTOR_CALL: operation 'closeAccount' is not defined by connector 'Mock Bank'");
+        assertThat(result.getMetadata())
+                .containsEntry(StepResult.META_ERROR_CODE, ConnectorErrorCodes.OPERATION_UNKNOWN)
+                .containsEntry(StepResult.META_RETRYABLE, false)
+                .containsEntry("operationKey", "closeAccount");
+        assertThat(result.getUserMessage()).isEqualTo(message("step.connector.operationUnknown"));
+        assertThat(port.resolves).isEqualTo(1);
         assertThat(transport.calls).isZero();
+        assertThat(breakers.state(BANK)).isEmpty();
+    }
+
+    @Test
+    void operationUnknownHasItsOwnUserMessageInBothLanguages() {
+        assertThat(ConnectorCallStepHandler.userMessageKey(ConnectorErrorCodes.OPERATION_UNKNOWN))
+                .isEqualTo("step.connector.operationUnknown");
+        assertThat(MESSAGES.get(ConversationLanguage.ARABIC, "step.connector.operationUnknown"))
+                .isNotBlank()
+                .isNotEqualTo(message("step.connector.operationUnknown"))
+                .isNotEqualTo("step.connector.operationUnknown");
     }
 
     @Test
@@ -365,7 +382,7 @@ class ConnectorCallStepHandlerTest {
         transport.answer(200, Map.of(), 1, 1);
         ConnectorDescriptor plain = new ConnectorDescriptor("plain", "Plain", null, "REST", 1, AuthScheme.NONE, null,
                 null, null, null, null, List.of(operation("ping", "GET", null, null, null, null, null)));
-        port.connector = new ResolvedConnector(BANK, "Plain", "plain", 1, plain, "https://plain.example", null,
+        port.connector = new ResolvedConnector(BANK, "Plain", "REST", plain, "https://plain.example", null,
                 Map.of(), Map.of(), 1L);
 
         handler.execute(step("{\"connectorId\":\"" + BANK + "\",\"operationKey\":\"ping\"}"), run());
@@ -695,7 +712,7 @@ class ConnectorCallStepHandlerTest {
                 List.of(Map.of("name", "apiKey", "type", "secret")), null,
                 new ConnectorDefaults(null, 8_000, new ConnectorDefaults.Retry(5, 200), null), null, idempotency,
                 List.of(ping, balance, stopCard));
-        return new ResolvedConnector(BANK, "Mock Bank", "mock-bank-rest", 2, descriptor, "https://bank.test/api",
+        return new ResolvedConnector(BANK, "Mock Bank", "REST", descriptor, "https://bank.test/api",
                 List.of(), Map.of(), Map.of("apiKey", SECRET), 7L);
     }
 
@@ -729,7 +746,7 @@ class ConnectorCallStepHandlerTest {
                 ConnectorDescriptor.TRANSPORT_MCP, 1, auth, List.of(Map.of("name", "token", "type", "secret")), null,
                 null, null, null, List.of(find, createTicket, sendNote),
                 protocolVersion != null ? new ConnectorDescriptor.McpSettings(protocolVersion) : null);
-        return new ResolvedConnector(BANK, "Mock CRM", "mock-crm-mcp", 1, descriptor, "https://crm.test/mcp",
+        return new ResolvedConnector(BANK, "Mock CRM", "MCP", descriptor, "https://crm.test/mcp",
                 List.of(), Map.of(), Map.of("token", SECRET), 2L);
     }
 

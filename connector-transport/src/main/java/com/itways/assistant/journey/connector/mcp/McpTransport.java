@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -280,8 +281,8 @@ public final class McpTransport implements ConnectorTransport, Closeable {
      * Caps: {@link #MAX_TOOLS} tools, {@link #MAX_PAGES} pages, a schema over
      * {@link #MAX_SCHEMA_BYTES} is left out and the tool marked. Annotations
      * ({@code readOnlyHint} and the like) are the server's claims: the caller
-     * treats a discovered tool as HIGH risk and not idempotent until an admin
-     * says otherwise.
+     * treats a discovered tool as not idempotent unless the server marks it
+     * read-only, and an admin reviews it.
      *
      * @throws ConnectorException for everything that stops the listing
      */
@@ -335,6 +336,11 @@ public final class McpTransport implements ConnectorTransport, Closeable {
         McpLog.discovered(connector, tools.size(), pages, truncated);
         String version = protocol.versionFor(connector, target.pinnedVersion());
         return new Discovery(List.copyOf(tools), version, truncated, List.copyOf(notes));
+    }
+
+    @Override
+    public Collection<String> scrubValues(ResolvedConnector connector) {
+        return protocol.scrubValues(connector);
     }
 
     /** Closes the HTTP client and its pooled connections; the token and negotiation caches die with the instance. */
@@ -460,7 +466,7 @@ public final class McpTransport implements ConnectorTransport, Closeable {
             McpLog.debug("[CONNECTOR] {} returned {} non-text content block(s), which were dropped", label, dropped);
         }
         if (result.path("isError").asBoolean(false)) {
-            String reason = SecretScrubber.scrub(text, connector.secretsOrEmpty().values(), 300);
+            String reason = SecretScrubber.scrub(text, protocol.scrubValues(connector), 300);
             throw new ConnectorException(ConnectorErrorCodes.REJECTED, false, null,
                     label + " reported an error" + (reason == null || reason.isBlank() ? "" : ": " + reason.strip()));
         }

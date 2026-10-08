@@ -22,7 +22,7 @@ import java.util.UUID;
 public interface ConnectorPort {
 
     /**
-     * The connector, its pinned descriptor and its opened secrets, for one call.
+     * The connector, its descriptor (definition) and its opened secrets, for one call.
      *
      * @param connectorId the connector the step names
      * @param accountId     the run's account
@@ -35,7 +35,7 @@ public interface ConnectorPort {
     ResolvedConnector resolve(UUID connectorId, String accountId, UUID assistantId);
 
     /**
-     * One operation of a connector's pinned type, for the builder's variable
+     * One operation of a connector's definition, for the builder's variable
      * picker ({@code describeOutputs}). No secrets are involved; the
      * implementation calls journey-service's operations endpoint. Empty when the
      * connector or the operation is unknown, or cannot be asked right now.

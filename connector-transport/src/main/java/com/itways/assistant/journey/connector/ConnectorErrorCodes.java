@@ -25,8 +25,13 @@ public final class ConnectorErrorCodes {
     public static final String CIRCUIT_OPEN = "CONNECTOR_CIRCUIT_OPEN";
     /** The connector could not be resolved: unknown, disabled, out of scope, or journey-service unavailable. */
     public static final String NOT_RESOLVABLE = "CONNECTOR_NOT_RESOLVABLE";
-    /** The step's configuration could not be read, or names an operation the type does not have. */
+    /** The step's configuration could not be read, or the connector's definition cannot be used as it is. */
     public static final String CONFIG_INVALID = "CONNECTOR_CONFIG_INVALID";
+    /**
+     * The step names an operation the connector's definition no longer has (it was removed or renamed
+     * after the journey was published). Not retryable: nothing was sent. Since 1.5.0.
+     */
+    public static final String OPERATION_UNKNOWN = "CONNECTOR_OPERATION_UNKNOWN";
     /** The answer was not what the operation declares: not JSON, or larger than the response cap. */
     public static final String RESPONSE_INVALID = "CONNECTOR_RESPONSE_INVALID";
 

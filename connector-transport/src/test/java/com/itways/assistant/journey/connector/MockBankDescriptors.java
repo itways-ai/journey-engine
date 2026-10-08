@@ -105,7 +105,7 @@ public final class MockBankDescriptors {
     public static ResolvedConnector connector(ConnectorDescriptor descriptor, String baseUrl,
             List<String> allowedHosts, Map<String, Object> config, Map<String, String> secrets) {
         return new ResolvedConnector(UUID.fromString("00000000-0000-0000-0000-000000000bad"), "Mock bank (test)",
-                descriptor.key(), descriptor.descriptorVersion(), descriptor, baseUrl, allowedHosts, config, secrets,
+                descriptor.transport(), descriptor, baseUrl, allowedHosts, config, secrets,
                 7L);
     }
 

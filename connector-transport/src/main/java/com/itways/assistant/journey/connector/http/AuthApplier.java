@@ -6,6 +6,7 @@ import com.itways.assistant.journey.model.connector.AuthScheme;
 import com.itways.assistant.journey.model.connector.ResolvedConnector;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -71,6 +72,16 @@ public final class AuthApplier {
     /** Forgets the OAuth2 token cached for {@code connector}; the next request fetches a fresh one. */
     public void invalidate(ResolvedConnector connector) {
         oauth2.invalidate(connector);
+    }
+
+    /**
+     * Everything to scrub from a message or body about {@code connector}: its
+     * secrets and, once acquired, the OAuth2 access token. The token is a
+     * credential too: a system that echoes the request's bearer in an error
+     * body would otherwise hand it to run history and the portal.
+     */
+    public Collection<String> scrubValues(ResolvedConnector connector) {
+        return oauth2.scrubValues(connector);
     }
 
     /** The value of {@code field}, or {@code AUTH_FAILED} naming the field (the value is never in a message). */

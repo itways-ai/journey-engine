@@ -180,9 +180,6 @@ public final class ConnectorDescriptorValidator {
         if (!METHODS.contains(op.methodOrGet())) {
             problems.add(where + ".method: must be one of " + METHODS);
         }
-        if (op.riskLevel() == null) {
-            problems.add(where + ".riskLevel: required (LOW, MEDIUM or HIGH)");
-        }
         if (op.output() == null) {
             problems.add(where + ".output: required (the output schema; use an empty object when nothing is read)");
         }
@@ -390,9 +387,6 @@ public final class ConnectorDescriptorValidator {
         }
         if (op.toolName() != null && !TOOL_NAME.matcher(op.toolName().trim()).matches()) {
             problems.add(where + ".toolName: must be 1 to 128 characters without whitespace");
-        }
-        if (op.riskLevel() == null) {
-            problems.add(where + ".riskLevel: required (LOW, MEDIUM or HIGH)");
         }
         if (op.idempotent() == null) {
             problems.add(where + ".idempotent: required for an MCP tool (true or false; a tool call is never assumed safe to repeat)");

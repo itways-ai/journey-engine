@@ -107,4 +107,16 @@ public class ConnectorException extends RuntimeException {
     public static ConnectorException configInvalid(String reason) {
         return new ConnectorException(ConnectorErrorCodes.CONFIG_INVALID, false, null, reason);
     }
+
+    /**
+     * The connector's definition has no operation with this key
+     * ({@link ConnectorErrorCodes#OPERATION_UNKNOWN}, not retryable, nothing sent).
+     *
+     * @param operationKey  the key the step names
+     * @param connectorName the connector's name, for the message
+     */
+    public static ConnectorException operationUnknown(String operationKey, String connectorName) {
+        return new ConnectorException(ConnectorErrorCodes.OPERATION_UNKNOWN, false, null,
+                "operation '" + operationKey + "' is not defined by connector '" + connectorName + "'");
+    }
 }
