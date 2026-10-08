@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.itways.assistant</groupId>
+        <artifactId>journey-engine-parent</artifactId>
+        <version>1.5.0</version>
+    </parent>
+
+    <artifactId>connector-transport</artifactId>
+    <name>connector-transport</name>
+    <description>Calls one operation of a configured connector on the wire: the ConnectorTransport SPI, the REST and MCP transports with their egress rules and auth schemes, the transport registry and the typed errors. Shared by the engine's CONNECTOR_CALL step and journey-service's Test button.</description>
+
+    <!--
+        A library both journey-service and the engine (inside conversation-service)
+        embed, so it is kept free of Spring beans and Spring MVC: plain classes a
+        host wires itself. ArchitectureTest holds that line.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>journey-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- The platform's address rule (PublicUrlPolicy) and host lists (HostAllowList). Version from platform-bom. -->
+        <dependency>
+            <groupId>com.itways</groupId>
+            <artifactId>common-core</artifactId>
+        </dependency>
+        <!-- common-web's web.net only: PinnedHttpClients and PublicOnlyDnsResolver, the
+             HTTP client whose connections dial exactly the addresses that were checked.
+             The rest of common-web (security filters, Redis, caching, OpenAPI) is not
+             wanted here and is excluded so the engine does not pick it up. -->
+        <dependency>
+            <groupId>com.itways</groupId>
+            <artifactId>common-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-security</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-cache</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-data-redis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-webmvc</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.jsonwebtoken</groupId>
+                    <artifactId>jjwt-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.jsonwebtoken</groupId>
+                    <artifactId>jjwt-impl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.jsonwebtoken</groupId>
+                    <artifactId>jjwt-jackson</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ehcache</groupId>
+                    <artifactId>ehcache</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.ben-manes.caffeine</groupId>
+                    <artifactId>caffeine</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.validation</groupId>
+                    <artifactId>jakarta.validation-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Optional in common-web; the transport uses it directly. Version managed by Spring Boot. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Plain JUnit 5 + AssertJ tests against a loopback HTTP server; ArchUnit for the module's rule. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.itways.assistant</groupId>
+        <artifactId>journey-engine-parent</artifactId>
+        <version>1.5.0</version>
+    </parent>
+
+    <artifactId>journey-engine-sdk</artifactId>
+
+    <properties>
+        <graalvm.js.version>24.1.2</graalvm.js.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>journey-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- CONNECTOR_CALL calls out through the same transport journey-service's
+             Test button uses (D5). It brings common-core and common-web's web.net
+             (pinned-DNS HTTP clients) with it, nothing else of common-web. -->
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>connector-transport</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- One circuit breaker per connector (ADR 0010 numbers), kept in the
+             engine so a dead external system fails fast for every journey that
+             uses it. The plain registry, not the Spring Boot starter: the host
+             decides whether to expose breaker state. Version from
+             platform-parent's resilience4j-bom. -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-freemarker</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Version from platform-bom. -->
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>ai-engine-sdk</artifactId>
+        </dependency>
+        <!-- EgressGuard's address rule: PublicUrlPolicy, the platform's one rule for
+             which addresses are public. Framework-free; the engine must not depend
+             on common-web or common-messaging. Version from platform-bom. -->
+        <dependency>
+            <groupId>com.itways</groupId>
+            <artifactId>common-core</artifactId>
+        </dependency>
+        <!-- API_CALL steps dial only the addresses EgressGuard vetted, through
+             the connection manager's DnsResolver (DNS rebinding). Declared because
+             the engine uses it directly; version managed by Spring Boot. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js-scriptengine</artifactId>
+            <version>${graalvm.js.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>js-community</artifactId>
+            <version>${graalvm.js.version}</version>
+            <type>pom</type>
+        </dependency>
+
+        <!-- Plain JUnit 5 + AssertJ unit tests: no Spring context, no external
+             services (API_CALL tests use a loopback HTTP server). -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

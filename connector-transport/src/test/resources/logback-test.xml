@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Quiet console; the transports' loggers at DEBUG so the log-capture tests see every line they can emit. -->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="com.itways.assistant.journey.connector.rest.RestTransport" level="DEBUG"/>
+    <logger name="com.itways.assistant.journey.connector.mcp.McpTransport" level="DEBUG"/>
+    <logger name="com.itways.web.net" level="WARN"/>
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
