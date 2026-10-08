@@ -9,7 +9,6 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itways.assistant.ai.dto.AiChatRequest;
 import com.itways.assistant.ai.dto.AiError;
-import com.itways.assistant.ai.dto.AiMessage;
 import com.itways.assistant.ai.dto.AiResponse;
 import com.itways.assistant.ai.service.AiService;
 import com.itways.assistant.ai.service.impl.LocalEmbeddingEngine;

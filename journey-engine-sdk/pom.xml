@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.20</version>
+        <version>1.4.0</version>
     </parent>
 
     <artifactId>journey-engine-sdk</artifactId>
@@ -21,6 +21,23 @@
             <groupId>com.itways.assistant</groupId>
             <artifactId>journey-model</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <!-- CONNECTOR_CALL calls out through the same transport journey-service's
+             Test button uses (D5). It brings common-core and common-web's web.net
+             (pinned-DNS HTTP clients) with it, nothing else of common-web. -->
+        <dependency>
+            <groupId>com.itways.assistant</groupId>
+            <artifactId>connector-transport</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- One circuit breaker per connector (ADR 0010 numbers), kept in the
+             engine so a dead external system fails fast for every journey that
+             uses it. The plain registry, not the Spring Boot starter: the host
+             decides whether to expose breaker state. Version from
+             platform-parent's resilience4j-bom. -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

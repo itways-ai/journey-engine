@@ -26,6 +26,7 @@ import com.itways.assistant.journey.model.RunStatus;
 import com.itways.assistant.journey.model.RunStepLog;
 import com.itways.assistant.journey.model.StepStatus;
 import com.itways.assistant.journey.model.StepText;
+import com.itways.assistant.journey.model.step.ConnectorCallConfig;
 import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -479,10 +480,31 @@ public class JourneyEngineImpl implements JourneyEngine {
                 mergeStepMetadata(viewResult, metadata);
                 stepResults.add(viewResult);
                 publish(observer, viewResult);
-                if (step.isContinueOnError()) {
+                // A child on the "error" branch takes the failure over (1.1.0): the
+                // run goes on down that branch, and isEligible keeps the step's
+                // other children off it. Checked before continueOnError so a step
+                // with both still routes to its error child. A step without one
+                // takes exactly the old path below.
+                boolean metadataContinue = metadata != null
+                        && Boolean.TRUE.equals(metadata.get(StepResult.META_CONTINUE_ON_ERROR));
+                if (hasErrorChild(stepOrder, sortedSteps)) {
                     context.addStepResult(stepOrder, "FAILED");
                     context.setCurrentStepIndex(stepOrder);
                     variableContext.writeStepOutput(context, step, "FAILED");
+                    variableContext.writeStepField(context, step, "error", errorField(stepResult, metadata));
+                    i++;
+                    continue;
+                }
+                if (step.isContinueOnError() || metadataContinue) {
+                    context.addStepResult(stepOrder, "FAILED");
+                    context.setCurrentStepIndex(stepOrder);
+                    variableContext.writeStepOutput(context, step, "FAILED");
+                    // onError: CONTINUE comes from the handler's config, and the
+                    // author asked for the error details with it; a plain
+                    // continueOnError step keeps the output it always had.
+                    if (!step.isContinueOnError()) {
+                        variableContext.writeStepField(context, step, "error", errorField(stepResult, metadata));
+                    }
                 } else {
                     context.setStatus(ExecutionStatus.ERROR);
                     break;
@@ -738,6 +760,19 @@ public class JourneyEngineImpl implements JourneyEngine {
 
         String requiredBranch = step.getBranchName();
 
+        // Error branch (1.1.0). "FAILED" is the engine's own marker, written only
+        // when it recorded a failure, so a WAITING or successful parent never
+        // opens it. Under a parent that has an error child, the unnamed and
+        // "success" children are the other side of that fork; every other
+        // parent keeps the rules below unchanged.
+        if (ConnectorCallConfig.ERROR_BRANCH.equalsIgnoreCase(requiredBranch)) {
+            return "FAILED".equals(parentResult);
+        }
+        if ((requiredBranch == null || "success".equalsIgnoreCase(requiredBranch))
+                && hasErrorChild(parentOrder, allSteps)) {
+            return !"FAILED".equals(parentResult);
+        }
+
         if (requiredBranch == null) {
             return true;
         }
@@ -793,7 +828,8 @@ public class JourneyEngineImpl implements JourneyEngine {
                 continue;
             }
             String caseName = sibling.getBranchName();
-            if (caseName == null || "DEFAULT".equalsIgnoreCase(caseName)) {
+            if (caseName == null || "DEFAULT".equalsIgnoreCase(caseName)
+                    || ConnectorCallConfig.ERROR_BRANCH.equalsIgnoreCase(caseName)) {
                 continue;
             }
             if (caseName.equalsIgnoreCase(switchValue)) {
@@ -801,6 +837,44 @@ public class JourneyEngineImpl implements JourneyEngine {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns true when a non-rejoin step under {@code parentOrder} sits on the
+     * "error" branch. Keyed on the child's branch name, not the parent's type,
+     * so any step type can gain an error branch.
+     */
+    private boolean hasErrorChild(int parentOrder, List<JourneyStep> allSteps) {
+        if (allSteps == null) {
+            return false;
+        }
+        for (JourneyStep child : allSteps) {
+            if (JourneyStepGraph.isRejoinStep(child)
+                    || !ConnectorCallConfig.ERROR_BRANCH.equalsIgnoreCase(child.getBranchName())) {
+                continue;
+            }
+            List<Integer> parents = JourneyStepGraph.resolveInboundParents(child);
+            if (!parents.isEmpty() && parents.get(0) == parentOrder) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@code steps.<order>.error} for a failed step: code, message and retryable
+     * from the handler's result, plus the HTTP status when there was one.
+     */
+    private Map<String, Object> errorField(StepResult stepResult, Map<String, Object> metadata) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("code", metadata != null ? metadata.get(StepResult.META_ERROR_CODE) : null);
+        error.put("message", stepResult.getMessage());
+        Object retryable = metadata != null ? metadata.get(StepResult.META_RETRYABLE) : null;
+        error.put("retryable", retryable != null ? retryable : Boolean.FALSE);
+        if (metadata != null && metadata.get(StepResult.META_HTTP_STATUS) != null) {
+            error.put("httpStatus", metadata.get(StepResult.META_HTTP_STATUS));
+        }
+        return error;
     }
 
     /**

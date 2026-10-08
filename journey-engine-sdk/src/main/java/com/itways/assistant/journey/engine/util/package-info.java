@@ -5,7 +5,9 @@
  * handling ({@link EngineUtils}), output schemas and channel support for the
  * catalogue ({@link StepOutputSchemaHelper}, {@link ChannelSupport}), DATA_MAP's
  * prompt ({@link DataMapped}) and the API_CALL egress rules
- * ({@link EgressGuard}, {@link EgressDnsResolver}, {@link EgressHttpClients}).
+ * ({@link EgressGuard}, {@link EgressDnsResolver}, {@link EgressHttpClients})
+ * and CONNECTOR_CALL's per-connector circuit breakers
+ * ({@link ConnectorCircuitBreakers}).
  *
  * <p>
  * Hosts may use {@link VariablePath} to read a run's variables by the same

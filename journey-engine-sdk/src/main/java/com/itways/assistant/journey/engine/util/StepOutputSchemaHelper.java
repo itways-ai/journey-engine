@@ -7,9 +7,14 @@ import com.itways.assistant.journey.model.JourneyStep;
 import com.itways.assistant.journey.model.catalog.OutputField;
 import com.itways.assistant.journey.model.catalog.StepDefinition;
 import com.itways.assistant.journey.model.catalog.StepOutputSchema;
+import com.itways.assistant.journey.model.connector.ConnectorOperation;
+import com.itways.assistant.journey.model.connector.SchemaNode;
+import com.itways.assistant.journey.model.step.ConnectorCallConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,6 +40,10 @@ public class StepOutputSchemaHelper {
         return HGI_PREFIX + name;
     }
 
+    /**
+     * API_CALL is frozen since 1.1.0: published journeys keep running it, the
+     * step picker hides it and offers CONNECTOR_CALL instead.
+     */
     public StepDefinition apiCallDefinition() {
         return StepDefinition.builder()
                 .type("API_CALL")
@@ -42,7 +51,84 @@ public class StepOutputSchemaHelper {
                 .label("API Call")
                 .icon(hgiIcon("hgi-cloud"))
                 .uiComponent("step-api")
+                .deprecated(true)
+                .replacedBy("CONNECTOR_CALL")
                 .build();
+    }
+
+    /** CONNECTOR_CALL (1.1.0): the one step type that offers an error path. */
+    public StepDefinition connectorCallDefinition() {
+        StepDefinition def = genericDefinition("CONNECTOR_CALL", "connector", "Connector call",
+                "hgi-plug-socket", "step-connector");
+        def.setSupportsErrorBranch(true);
+        return def;
+    }
+
+    /**
+     * CONNECTOR_CALL publishes the shaped response, its status, latency and
+     * attempts, and the error fields a fallback step reads after the error
+     * branch. When the step names an operation the lookup can describe, each
+     * output property is listed too ({@code output.balance}), nested objects as
+     * dotted paths and arrays as one {@code array} field; a property flagged
+     * {@code sensitive} is listed with {@link OutputField#isSensitive()}, since
+     * a later step only ever reads it masked.
+     *
+     * @param operationLookup the operation a parsed config names; empty when it cannot be described
+     */
+    public StepOutputSchema connectorCallSchema(JourneyStep step,
+            Function<ConnectorCallConfig, Optional<ConnectorOperation>> operationLookup) {
+        List<OutputField> fields = new ArrayList<>(List.of(
+                OutputField.of("output", "Response", "object"),
+                OutputField.of("status", "HTTP Status", "number"),
+                OutputField.of("latencyMs", "Latency (ms)", "number"),
+                OutputField.of("attempts", "Attempts", "number"),
+                OutputField.of("error.code", "Error Code", "string"),
+                OutputField.of("error.message", "Error Message", "string"),
+                OutputField.of("error.retryable", "Error Retryable", "boolean")));
+        // getAllDefaultSchemas() describes every type with a null step.
+        ConnectorCallConfig config = null;
+        if (step != null && step.getApiConfig() != null && !step.getApiConfig().isBlank()) {
+            try {
+                config = ConnectorCallConfig.parse(step.getApiConfig());
+            } catch (ConnectorCallConfig.InvalidConfigException e) {
+                config = null;
+            }
+        }
+        if (config != null && operationLookup != null) {
+            Optional<ConnectorOperation> operation;
+            try {
+                operation = operationLookup.apply(config);
+            } catch (RuntimeException e) {
+                operation = Optional.empty();
+            }
+            if (operation != null && operation.isPresent()) {
+                addOutputProperties(operation.get().outputOrEmpty(), "output", fields);
+            }
+        }
+        return StepOutputSchema.builder().stepType("CONNECTOR_CALL").fields(fields).build();
+    }
+
+    private static void addOutputProperties(SchemaNode node, String prefix, List<OutputField> fields) {
+        for (Map.Entry<String, SchemaNode> property : node.propertiesOrEmpty().entrySet()) {
+            SchemaNode child = property.getValue();
+            if (child == null) {
+                continue;
+            }
+            String path = prefix + "." + property.getKey();
+            String label = child.description() != null && !child.description().isBlank()
+                    ? child.description()
+                    : property.getKey();
+            boolean nested = child.type() == null ? !child.propertiesOrEmpty().isEmpty()
+                    : "object".equalsIgnoreCase(child.type());
+            String type = nested ? "object" : schemaType(child.type());
+            OutputField field = OutputField.dynamic(path, label, type);
+            field.setSensitive(child.isSensitive());
+            fields.add(field);
+            // A sensitive object is masked whole: nothing below it is readable.
+            if (nested && !child.isSensitive()) {
+                addOutputProperties(child, path, fields);
+            }
+        }
     }
 
     public StepDefinition userInputDefinition() {

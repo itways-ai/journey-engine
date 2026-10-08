@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.itways.assistant</groupId>
         <artifactId>journey-engine-parent</artifactId>
-        <version>1.0.20</version>
+        <version>1.4.0</version>
     </parent>
 
     <artifactId>journey-model</artifactId>
@@ -19,6 +19,13 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
+        <!-- ConnectorCallConfig.parse: the one strict parser (unknown fields fail)
+             that journey-service's preflight and the engine's step both use, so a
+             bad config is refused the same way at publish and at run time. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -28,12 +35,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- EngineSearchResultJsonTest: the wire shape old and new journey-services send. -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

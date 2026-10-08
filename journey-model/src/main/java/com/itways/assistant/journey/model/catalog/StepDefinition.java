@@ -23,6 +23,17 @@ public class StepDefinition {
      * {@code ChannelSupport}. Filled by the registry when the catalog is served.
      */
     private java.util.Map<String, String> channels;
+    /**
+     * True when a child with branch name {@code error} runs after this step
+     * fails (1.1.0). The builder offers an error path only for these types.
+     */
+    private boolean supportsErrorBranch;
+    /**
+     * True for a type kept for published journeys but hidden from the step
+     * picker (1.1.0: API_CALL). {@link #replacedBy} names what to use instead.
+     */
+    private boolean deprecated;
+    private String replacedBy;
 
     public static StepDefinition of(String type) {
         return StepDefinition.builder().type(type).label(type).build();

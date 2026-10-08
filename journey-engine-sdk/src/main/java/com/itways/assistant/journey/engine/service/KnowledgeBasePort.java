@@ -37,12 +37,14 @@ public interface KnowledgeBasePort {
      * @param queryVector the embedding vector of the user's query
      * @param limit      maximum number of results to return
      * @param locale     the conversation's language, or null for no preference.
-     *                   When the index holds chunks in this locale, only those
-     *                   are searched; when it holds none, the whole index is
-     *                   searched and answers may come back in another language.
-     *                   Restricting to a locale that exists is what stops a
-     *                   near-duplicate English chunk outscoring the correct
-     *                   Arabic one on a cross-lingual embedding
+     *                   A ranking preference, not a filter (cross-language
+     *                   search): every chunk of the index is searched whatever
+     *                   its language, and a chunk tagged with this language ranks
+     *                   a little higher, which is what stops a near-duplicate
+     *                   English chunk outscoring the correct Arabic one on a
+     *                   cross-lingual embedding. Before this it filtered the
+     *                   search to chunks of this language and untagged ones,
+     *                   which hid an English index from an Arabic question
      * @return list of matching text chunks ordered by similarity (most similar first)
      * @throws KnowledgeIndexMissingException when the index does not exist in the scope
      */

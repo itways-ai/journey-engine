@@ -481,6 +481,9 @@ public class KnowledgeRetrievalStepHandler implements StepHandler {
             int limit = limit(config.getLimit());
             double threshold = threshold(config.getThreshold());
             Double diversity = diversity(config.getDiversity());
+            // The run's language: a ranking preference in the search (same-language
+            // passages first), not a filter; the port bridges a question written in
+            // another language than the index (cross-language search).
             String locale = context.resolvedLanguage().code();
             // A step that composes fetches on the recall floor and lets the model
             // decide; one that answers with the stored entry keeps its threshold.

@@ -35,6 +35,25 @@ public class StepResult {
      */
     private String userMessage;
 
+    /**
+     * Metadata keys a failed step may set (1.1.0). The engine copies them into
+     * {@code steps.<order>.error} when it takes the step's error branch, so a
+     * fallback step can branch on {@code {{steps.<key>.error.code}}}; run history
+     * shows them with the step view.
+     */
+    /** A stable error code such as {@code CONNECTOR_TIMEOUT}; already used by KNOWLEDGE_RETRIEVAL. */
+    public static final String META_ERROR_CODE = "errorCode";
+    /** Whether the same step could succeed if tried again. */
+    public static final String META_RETRYABLE = "retryable";
+    /** The HTTP status an external call answered, when there was one. */
+    public static final String META_HTTP_STATUS = "httpStatus";
+    /**
+     * Set to {@code true} by a failed step whose configuration says the run
+     * should carry on ({@code onError: CONTINUE}); the engine then treats it as
+     * {@code continueOnError} on the step.
+     */
+    public static final String META_CONTINUE_ON_ERROR = "continueOnError";
+
     public static StepResult success(Object data) {
         return StepResult.builder()
                 .status(StepStatus.SUCCESS)

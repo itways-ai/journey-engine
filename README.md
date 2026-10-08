@@ -6,14 +6,22 @@ conversation turn at a time. It has no database and no HTTP API of its own. The
 service that embeds it supplies storage, search, rendering and mail through
 ports.
 
+1.4.0 renames the product concept "integration" to "connector" throughout: the
+step type `INTEGRATION_CALL` is now `CONNECTOR_CALL`, its config key
+`integrationId` is `connectorId`, the error codes `INTEGRATION_*` are
+`CONNECTOR_*`, the message keys `step.integration.*` are `step.connector.*`, the
+properties `itways.integrations.*` are `itways.connectors.*`, and the
+`Integration*` classes are `Connector*`. Behaviour is unchanged.
+
 ## Modules
 
 | Module | Artifact | What it is |
 |---|---|---|
-| `journey-model` | `com.itways.assistant:journey-model` | The journey document and its statuses (`JourneyDefinition`, `JourneyStep`, `RunStatus`, `StepStatus`, `RunStepLog`, `RunHistoryEvent`, …), the step graph (`JourneyStepGraph`: parents, order, cycle check) and, in `model.catalog`, the step catalogue the builder reads (`StepDefinition`, `StepOutputSchema`, `OutputField`, `ChannelVariableSchema`, `ChannelVariableGroup`). Plain data, no Spring. The service that stores journeys depends on this only. |
-| `journey-engine-sdk` | `com.itways.assistant:journey-engine-sdk` | The engine, the step handlers, the ports and the Spring configuration. Pulls in Spring Boot, FreeMarker, GraalVM JS, `ai-engine-sdk` and `common-core`. |
+| `journey-model` | `com.itways.assistant:journey-model` | The journey document and its statuses (`JourneyDefinition`, `JourneyStep`, `RunStatus`, `StepStatus`, `RunStepLog`, `RunHistoryEvent`, …), the step graph (`JourneyStepGraph`: parents, order, cycle check), in `model.catalog` the step catalogue the builder reads (`StepDefinition`, `StepOutputSchema`, `OutputField`, `ChannelVariableSchema`, `ChannelVariableGroup`) and, since 1.1.0, in `model.connector` the connector type descriptor and the resolved connector (`ConnectorDescriptor`, `ConnectorOperation`, `AuthScheme`, `SchemaNode`, `ResolvedConnector`, `ConnectorDescriptorValidator`) and in `model.step` the strictly parsed `ConnectorCallConfig`; since 1.2.0 the MCP fields (`transport: MCP`, `ConnectorDescriptor.McpSettings`, `ConnectorOperation.toolName` / `idempotencyArgument`) and the validator's MCP rules. Plain data, no Spring (Jackson only). The service that stores journeys depends on this and on `connector-transport`. |
+| `connector-transport` | `com.itways.assistant:connector-transport` | Since 1.1.0. Calls one operation of a configured connector on the wire: the `ConnectorTransport` SPI, `rest.RestTransport` (HTTPS JSON APIs; auth schemes none / apiKey / basic / bearer / oauth2-client-credentials; pinned DNS, no redirects, per-connector host list, base-URL prefix, response cap, timeouts, retries for idempotent operations), since 1.2.0 `mcp.McpTransport` (a remote MCP server over Streamable HTTP, one tool per operation; see "MCP transport") and `ConnectorTransports` (the host's transports by descriptor `transport` value), `http.*` (what the two transports share), `InputBinder`, `OutputMasker`, `SecretScrubber` and the typed `ConnectorException` with its `ConnectorErrorCodes`. No Spring beans, no Spring MVC: the engine's CONNECTOR_CALL step and journey-service's Test button both wire it themselves, so they behave the same. Pulls in `common-core`, `httpclient5` and, from `common-web`, only its `web.net` classes (the rest is excluded). |
+| `journey-engine-sdk` | `com.itways.assistant:journey-engine-sdk` | The engine, the step handlers, the ports and the Spring configuration. Pulls in Spring Boot, FreeMarker, GraalVM JS, `ai-engine-sdk`, `common-core`, `connector-transport` and `resilience4j-circuitbreaker`. |
 
-Both are released together at the version in the parent `pom.xml`.
+All three are released together at the version in the parent `pom.xml`.
 
 ## What the engine does
 
@@ -37,8 +45,13 @@ A call runs steps until the journey ends or a step has to wait for someone.
   DELAY, or a child journey that is waiting) parks the run. The host stores the
   returned `ExecutionContext` and passes it back to `resume` with the next
   message. The waiting step then runs again with `inputs.answer` set.
-- **Failure.** A step that returns `ERROR` or throws stops the run, unless the
-  step has `continueOnError`. With `continueOnError`, `FAILED` becomes the
+- **Failure.** A step that returns `ERROR` or throws stops the run, unless:
+  (1) the step has a child with `branchName` `error`. Then the step's output is
+  `FAILED`, `steps.<key>.error` holds `{code, message, retryable, httpStatus?}`
+  from the handler's result metadata, and the error child (and its descendants)
+  run while the step's other children do not. Or (2) the step has
+  `continueOnError`, or the handler's result carries metadata
+  `continueOnError: true` (`onError: CONTINUE`). Then `FAILED` becomes the
   step's output and the run goes on. The user sees the step's `userMessage` if
   it set one. Otherwise the user sees a generic sentence, and the diagnostic
   stays in the step log.
@@ -69,11 +82,30 @@ A call runs steps until the journey ends or a step has to wait for someone.
   against the version it was pinned to. Nesting stops at 5 levels, and a journey
   that is already on the call stack cannot be triggered again.
 
+### Error branch (1.1.0)
+
+A step gets an error branch through a child whose `branchName` is `error`. The
+builder writes one when CONNECTOR_CALL's config says `onError: BRANCH`, but the
+engine keys on the child's branch name, so any step type can gain one.
+
+- The error child runs only when its parent failed (the engine recorded `FAILED`).
+- Under a parent that has an error child, children with no branch name or named
+  `success` run only when the parent did not fail. Parents without an error
+  child behave exactly as before.
+- On failure the engine writes `steps.<key>.output = "FAILED"` and
+  `steps.<key>.error = {code, message, retryable, httpStatus}` (`httpStatus` only
+  when the handler set it), so the fallback can read `{{steps.<key>.error.code}}`.
+- A backward JUMP clears the failure marker and the `error` field with the other
+  step outputs, so a replayed step that succeeds takes the success path.
+- `WAITING` is not a failure: a parked step never opens its error branch.
+- The step catalogue flags the types that support it with `supportsErrorBranch`.
+
 ## Step handlers
 
 | Handler | Step type | Purpose |
 |---|---|---|
-| `ApiCallStepHandler` | `API_CALL` | Calls an HTTP API. Placeholders are resolved in the URL, headers and body, and body values keep their types. The URL must pass the egress guard. `{{auth.userToken}}` is available in headers only. |
+| `ApiCallStepHandler` | `API_CALL` | Calls an HTTP API. Placeholders are resolved in the URL, headers and body, and body values keep their types. The URL must pass the egress guard. `{{auth.userToken}}` is available in headers only. Frozen and deprecated since 1.1.0 (`replacedBy: CONNECTOR_CALL` in the catalogue); unchanged. |
+| `ConnectorCallStepHandler` | `CONNECTOR_CALL` | Calls one operation of a configured connector, resolved through `ConnectorPort` and called through the connector-transport transport the descriptor names (`ConnectorTransports`: `RestTransport` for `REST`, `McpTransport` for `MCP`; a transport the host does not serve fails the step `CONNECTOR_CONFIG_INVALID`): inputs mapped with placeholders and validated against the operation's input schema, retries only for idempotent operations, one circuit breaker per connector, a time budget (`timeoutMs` × 1.5), an idempotency key on writes (`executionId:stepKey`, re-sent on a JUMP replay), sensitive outputs masked before they are stored, and an error branch (see "Error branch"). |
 | `CodeScriptStepHandler` | `CODE_SCRIPT` | Runs JavaScript in a GraalVM sandbox over a JSON copy of the variables, with no host access and with statement and time limits. The value of the last expression is the output. |
 | `ConditionStepHandler` | `CONDITION` | Evaluates a SpEL expression (restricted context) to true or false, for branching. |
 | `DataMapStepHandler` | `DATA_MAP` | Asks the LLM to fill the author's JSON shape from the user's message and context. Re-asks once for blank fields. |
@@ -231,8 +263,17 @@ breaking release for every host).
 | `model` | yes | The data the SPI passes: `ExecutionContext`, `StepResult`, `MailConfig`, `TemplateRenderResult` (and `ApiConfig`, a step's parsed config). |
 | `context` | yes, except `VariableContext` | Reserved start-params the engine lifts out of the variables: `EndUserAuth`, `Simulation`, `ChannelCapabilities`, `ConversationParams`. |
 | `language` | yes, except `StepLocalizer` | `ConversationLanguage`, `LanguageDetector`, `LanguageParams`, `DecisionWords`, `Messages`, `EngineMessages`. |
-| `util` | only `VariablePath` | Placeholders, variable paths, egress rules, schema helpers. |
+| `util` | only `VariablePath` | Placeholders, variable paths, egress rules, schema helpers, the per-connector circuit breakers. |
 | `config`, `impl`, `handler`, `validation` | no | Spring wiring, the run loop, the step handlers (and the engine's own FreeMarker `TemplateRender`), answer validation. |
+
+`connector-transport`'s package `com.itways.assistant.journey.connector` (and
+`connector.rest`, `connector.mcp`) is host-facing in full: journey-service
+constructs a `RestTransport` and an `McpTransport` (and an
+`ConnectorTransports` over them) for its Test and Try endpoints, calls
+`McpTransport.discover` for its MCP import, and uses `InputBinder`,
+`OutputMasker` and `SecretScrubber` directly. `connector.http` is the plumbing
+the two transports share; public for that reason only, it may change between
+minor versions.
 
 ## Ports the host implements
 
@@ -248,6 +289,7 @@ beans:
 | `JourneyLookupPort` | yes | TRIGGER_JOURNEY | Finds a journey by trigger intent, or by pinned version id. |
 | `AiConfigProvider` | yes | DATA_MAP | The account's AI provider settings. |
 | `TextTranslator` | yes for KNOWLEDGE_RETRIEVAL, optional elsewhere | knowledge answers, step text | Machine translation into the run's language. `TextTranslator.NONE` never translates. |
+| `ConnectorPort` | yes for CONNECTOR_CALL | CONNECTOR_CALL | Resolves a configured connector (pinned descriptor, base URL, allow-list, opened secrets, kept in memory for the call only; cached at most 60 s by id and lockVersion, dropped on `invalidate`, which the step calls when the connector's breaker opens) and describes an operation for the variable picker. |
 | `MailDeliveryPort` | optional | SEND_MAIL | Delivers mail. Without it, SEND_MAIL fails with "no mail transport". |
 | `JourneyRunLifecyclePort` | optional (any number) | engine | Persists run lifecycle events. Must be idempotent on `executionId`. |
 | `StepTextPort` | optional | step localization | Caches machine translations of step text. |
@@ -258,8 +300,9 @@ Tenants write API_CALL URLs, and those URLs can be built from what the end user
 typed. `EgressGuard` therefore refuses any URL that is not http(s), or whose
 host resolves to a private, loopback, link-local or other internal address. What
 counts as internal is the platform's one address rule, `PublicUrlPolicy.isPublic`
-in `common-core` (the engine depends on `common-core` only, never on `common-web`
-or `common-messaging`); it also treats the documentation ranges (192.0.2/24,
+in `common-core` (the engine depends on `common-core` and, through
+`connector-transport`, on `common-web`'s `web.net` classes only, never on the
+rest of `common-web` or on `common-messaging`); it also treats the documentation ranges (192.0.2/24,
 198.51.100/24, 203.0.113/24, 2001:db8::/32) as internal. It
 checks every address a name resolves to, not just the first. The connection
 then dials only the addresses that were checked, so DNS rebinding does not get
@@ -278,6 +321,139 @@ allow-list:
 A refusal names the host as the URL wrote it, and never the address it resolved
 to.
 
+## Connector egress (`itways.connectors.*`, 1.1.0)
+
+CONNECTOR_CALL does not use `EgressGuard`. Its calls go through
+`connector-transport`'s `RestTransport`, whose rules are per connector and
+stricter than API_CALL's:
+
+- The base URL comes from the connector (journey-service checked it with
+  `PublicUrlPolicy` when it was saved), never from the journey: `https` only
+  (`http` only where `itways.connectors.egress.allow-http` is true, for local
+  mocks), a host, no user name, no query. An operation's path is relative and
+  can never change the scheme, host, port or leave the base path: path
+  parameters are percent-encoded, the final URL is normalised and compared
+  with the base, and `..`, `@`, `//`, a query or a fragment smuggled through a
+  value are refused (`CONNECTOR_EGRESS_REFUSED`).
+- The host must be on the connector's own allow-list (`allowedHosts`; by
+  default the base URL's host) and, when the operator set one, on the
+  platform-wide bound `itways.connectors.egress.allowed-hosts` (empty = any
+  public host). Both follow `HostAllowList`: exact names, IP literals,
+  `.domain` suffixes.
+- Names are resolved once through a pinned resolver that refuses private,
+  loopback, link-local and other internal addresses, and the connection dials
+  exactly those addresses (no DNS rebinding). Hosts that may resolve privately
+  anyway (a mock bank on `.test` in development) go in
+  `itways.connectors.egress.private-hosts`; empty in production.
+- Redirects are never followed (a 3xx is `CONNECTOR_REJECTED`); TLS is the
+  JDK default (system trust store, host name verified); response bodies are
+  capped at `itways.connectors.max-response-bytes` (1 MiB).
+- Credentials are applied by the transport from the resolved connector's
+  secrets, into headers (or, for an `apiKey` type that declares `in: query`,
+  the query string); they are never variables, never in the run context, run
+  history or a log. Logs carry the host and the path *template* only.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `itways.connectors.egress.allowed-hosts` | empty | Platform-wide bound: when set, a connector's host must also be on it. |
+| `itways.connectors.egress.private-hosts` | empty | Hosts allowed to resolve to private addresses (development and tests only). |
+| `itways.connectors.egress.allow-http` | `false` | Whether `http://` base URLs may be dialled (development and tests only). |
+| `itways.connectors.max-response-bytes` | `1048576` | Response body cap. |
+
+Circuit breakers are per connector (`ConnectorCircuitBreakers`, the ADR 0010
+numbers: half of the last 20 calls failed, at least 10; open 15 s; 3 half-open
+trials). Only "the system is not there" counts as a failure: no answer, a
+timeout, 429, 502, 503, 504. A 4xx is the system speaking and does not open the
+breaker. While open, the step fails at once with `CONNECTOR_CIRCUIT_OPEN`
+and nothing is sent.
+
+## MCP transport (1.2.0)
+
+A connector type with `transport: MCP` describes a remote [Model Context
+Protocol](https://modelcontextprotocol.io/specification/) server over its
+Streamable HTTP transport. Each operation is one tool of that server, called
+deterministically by the journey (`tools/call`): no model chooses a tool, and
+nothing the server says — a tool's description, its annotations, a result —
+is ever shown to one. The connector's base URL is the server's endpoint
+(`https://host/mcp`); the engine wires `McpTransport` next to `RestTransport`
+in `ConnectorCallConfiguration` under the same `itways.connectors.*`
+egress settings.
+
+Descriptor, over the REST shape: `transport: "MCP"`; `method` and `path` are
+not used (the validator refuses them); `toolName` names the server's tool
+(the operation key when absent); every input property is a tool argument
+(`in` must be absent or `body`; `as` renames it on the wire); `idempotent`
+must be declared (`true` or `false` — a tool call is never assumed safe to
+repeat; discovered tools start as `false` and HIGH risk); a write that can take
+the key names the argument in `idempotencyArgument` (MCP has no idempotency
+header; `idempotencyHeader` and the type's `idempotency.header` are refused);
+`auth.scheme` is `none`, `apiKey` (`in: header` only), `bearer` or
+`oauth2-client-credentials` — a credential travels in a header, never in the
+URL; `basic` is refused. Optional `mcp.protocolVersion` pins the specification
+revision (below); absent, the transport negotiates.
+
+Specification revisions, verified against modelcontextprotocol.io on
+2026-10-04 (`/specification/2026-07-28/basic/transports/streamable-http`,
+`/specification/2025-11-25/basic/transports`, `.../basic/lifecycle`,
+`.../server/tools`, `/specification/2026-07-28/changelog`):
+
+- **2026-07-28** (current): stateless. One POST per request with
+  `Accept: application/json, text/event-stream`, `MCP-Protocol-Version`,
+  `Mcp-Method` and (for `tools/call`) `Mcp-Name`; `params._meta` carries
+  `io.modelcontextprotocol/protocolVersion`, `clientCapabilities` and
+  `clientInfo`. The answer is a JSON object or an SSE stream that carries the
+  response. No `initialize`, no `ping`, no session. `-32022` unsupported
+  version (with `data.supported`), `-32020` header mismatch, `-32021` missing
+  capability, `-32601` unknown method (HTTP 404), `-32602` unknown tool;
+  results carry `resultType` (`complete` or `input_required`).
+- **2025-11-25, 2025-06-18, 2025-03-26** (legacy): `initialize` first (the
+  server answers with the revision it speaks and may assign `Mcp-Session-Id`),
+  then `notifications/initialized` (202), then requests with
+  `MCP-Protocol-Version` and the session id; a 404 means the session expired
+  and the transport initializes again, once.
+
+Negotiation: with no pinned revision the current one is tried first; a server
+that refuses it the way a legacy server does (`-32022`, a `-32000..-32019`
+"not initialized" / "unsupported version" error, a bare 400) gets the legacy
+handshake, and the outcome is remembered per connector (id and lock
+version). A pinned revision is never negotiated away; a server that speaks no
+revision the transport knows fails `CONNECTOR_UNAVAILABLE`, not retryable.
+
+Error mapping: a result with `isError: true` is `CONNECTOR_REJECTED` (the
+tool failed in its own terms: not retried, not a breaker failure); `-32601` /
+`-32602` are `CONNECTOR_CONFIG_INVALID`; an unsupported revision is
+`CONNECTOR_UNAVAILABLE` not retryable; 401 / 403 `CONNECTOR_AUTH_FAILED`;
+3xx `CONNECTOR_REJECTED` (never followed); 429 / 502 / 503 / 504 and no
+answer `CONNECTOR_UNAVAILABLE` / `CONNECTOR_TIMEOUT`, retried only when
+the operation declares `idempotent: true` or the call carries a key the tool
+takes; other 5xx `CONNECTOR_UNAVAILABLE` not retried; an answer beyond the
+cap, a stream without the response or a result that is not an object
+`CONNECTOR_RESPONSE_INVALID`; `resultType: input_required` (MRTR)
+`CONNECTOR_REJECTED`. The breaker counts `UNAVAILABLE` and `TIMEOUT` only, as
+for REST.
+
+Output: `structuredContent` when the tool returned it; else the first `text`
+content block, parsed as a JSON object when it is one, otherwise
+`{"text": "..."}`; image, audio and resource blocks are dropped (DEBUG). The
+step masks and limits it by the operation's output schema exactly as for REST.
+
+Limits: the response cap (`itways.connectors.max-response-bytes`) applies to
+a JSON body and to a whole SSE stream; a stream is read for at most 256 events
+and is aborted once the response arrived (a server that keeps it open costs
+nothing more); `McpTransport.discover` (journey-service's import) reads at most
+20 pages and 200 tools and leaves out a schema over 64 KiB (the tool is
+marked). Logs carry the connector id, operation key, tool name, host,
+endpoint path and revision — never an argument, a result, a credential or a
+session id. `test()` runs the declared `test.operation` if any, else
+`tools/list`, every page within the same caps (`{"toolCount": n, "tools": [...]}`).
+
+Not supported, by design: stdio or any local process; the agent loop in which a
+model picks tools (mode B); resources and prompts; elicitation and
+`input_required` results; OAuth authorization-code flows (a static header
+credential or client credentials only); the server-initiated GET stream;
+sessions ended with DELETE; resumption with `Last-Event-ID`; `x-mcp-header`
+parameters.
+
 Other settings: `journey.script.statement-limit` (500000),
 `journey.script.timeout-seconds` (10),
 `journey.user-input.max-attempts` (3),
@@ -289,6 +465,8 @@ Other settings: `journey.script.statement-limit` (500000),
 `journey.knowledge.synthesis.abstention-phrases` (true) and
 `journey.knowledge.recall.arabic-offset` (0; was 0.05, see below).
 
+CONNECTOR_CALL's own settings are in the Connector egress section above.
+
 All of them were under the legacy `nibras.` prefix (`nibras.journey.*`,
 `nibras.knowledge.synthesis.*`) up to 1.0.18; since 1.0.19 the old keys are not
 read, so a host that set one renames it (the host is conversation-service).
@@ -298,7 +476,7 @@ The run parameters the engine lifts out of the variables
 
 ## Build
 
-The parent is `com.itways:platform-parent` 2.2.0 (from `common-lib`). It sets
+The parent is `com.itways:platform-parent` 2.3.0 (from `common-lib`). It sets
 Java 21, manages the versions (Spring Boot 3.2.2; `ai-engine-sdk` and
 `common-core` through `platform-bom`) and runs JaCoCo, surefire and the sources
 jar. Only GraalVM JS (`graalvm.js.version`) carries its own version.
@@ -327,7 +505,31 @@ and AssertJ tests: no Spring context and no external services.
   (egress rules, conditions, step keys, placeholders, variable paths, answer
   validation).
 - `journey-model`'s `JourneyStepGraphTest` covers the step graph (order,
-  parents, cycles).
+  parents, cycles); `connector/*Test` the descriptor validator (REST and MCP
+  rules) and its JSON shape; `step/ConnectorCallConfigTest` the strict step
+  config parser.
+- `connector-transport`'s `rest/RestTransportTest` runs `RestTransport` against
+  a loopback HTTP server (allowed only through `EgressPolicy.privateHosts` and
+  `allowHttp`, exactly as a deployment would allow a local mock): auth schemes,
+  retries and back-off, idempotency keys, status mapping, redirects refused,
+  base-URL escapes refused, private addresses refused, response cap, and that
+  no secret, query string or rendered path reaches a log line or a message.
+  `mcp/McpTransportTest` runs `McpTransport` against `FakeMcpServer` on the same
+  loopback server, in the current stateless revision and the legacy handshake
+  (with and without sessions, expiry, pinned revisions, `data.supported`
+  fallback, unknown revisions), as JSON and as SSE (notification first, a
+  stream kept open, oversized, without a response), tool results of every
+  shape, `isError`, `input_required`, JSON-RPC errors, 401/403, 5xx, timeouts,
+  retries and the idempotency argument, redirects, metadata addresses, OAuth2
+  refresh, `test()`, `discover()` with pagination and caps, the registry, and
+  that no credential, argument, result or session id reaches a log line.
+  `ArchitectureTest` holds the module to no Spring and no `common-web` beyond
+  `web.net`.
+- `engine/impl/JourneyEngineErrorBranchTest` covers the error branch (1.1.0)
+  and proves the old failure, `continueOnError`, JUMP, CONDITION and SWITCH
+  paths are unchanged; `engine/handler/ConnectorCallStepHandlerTest` runs the
+  CONNECTOR_CALL handler with fake transports (REST and MCP, by kind) and a
+  fake `ConnectorPort`.
 
 API_CALL tests use a local HTTP server on the loopback interface.
 `ApiCallDnsRebindingTest` also needs `127.0.0.2`: it is skipped where that

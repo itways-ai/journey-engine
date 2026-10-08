@@ -22,6 +22,12 @@ public class OutputField {
      */
     private boolean absolute;
     private List<String> platforms;
+    /**
+     * True when the value is masked before it is stored (1.1.0: a connector
+     * operation's output property flagged {@code sensitive}). The picker lists
+     * it with a lock: a later step reads {@code ********}, never the value.
+     */
+    private boolean sensitive;
 
     public static OutputField of(String path, String label, String type) {
         return OutputField.builder().path(path).label(label).type(type).build();

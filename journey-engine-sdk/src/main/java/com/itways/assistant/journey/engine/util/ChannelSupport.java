@@ -29,6 +29,8 @@ public final class ChannelSupport {
             Map.entry("SWITCH", NATIVE),
             Map.entry("JUMP", NATIVE),
             Map.entry("API_CALL", NATIVE),
+            // A server-side call: nothing about it depends on the channel.
+            Map.entry("CONNECTOR_CALL", NATIVE),
             Map.entry("DATA_MAP", NATIVE),
             Map.entry("CODE_SCRIPT", NATIVE),
             Map.entry("KNOWLEDGE_RETRIEVAL", NATIVE),

@@ -19,7 +19,10 @@ import java.util.UUID;
  * @param query          the question as asked. Personal data: never log it above DEBUG
  * @param queryVector    the question's embedding
  * @param limit          at most this many hits, 1..20
- * @param locale         the run's language code, or null for no preference
+ * @param locale         the run's language code, or null for no preference. A ranking preference
+ *                       (same-language passages rank a little higher), never a filter: the adapter
+ *                       also tells journey-service when the question is in another language than
+ *                       the index, and sends it translated (cross-language search)
  * @param threshold      the cosine similarity a hit needs, 0.30..0.95. Never null from the
  *                       engine: the step's setting, or 0.70
  * @param diversity      0..1, how much the hits are spread over different passages (MMR);
